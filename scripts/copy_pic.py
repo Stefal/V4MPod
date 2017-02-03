@@ -22,7 +22,7 @@ ROOT/DCIM/YDXJ0115.jpg (timestamp is 2017-02-01_11h26mn42s)
 ROOT/DCIM/YDXJ0116.jpg (timestamp is 2017-02-01_11h26mn43s)
 
 with the command:
-python copy_pic -s front,back -d /test/ -c 60
+python copy_pic ~/test -s front,back  -c 60
 
 In your test folder you will get:
 2017-02-01_11h21mn10s|
@@ -53,8 +53,8 @@ def arg_parse():
     """ Parse the command line you use to launch the script """
     parser = argparse.ArgumentParser(description="A tool to copy pictures from multiple external sources", version="0.01")
     
+    parser.add_argument("dir", nargs="?" help="Path destination for the pictures", default = os.getcwd())
     parser.add_argument("-s", "--source", help="Name of the volume's sources", default = "avant, droite, arriere, gauche")
-    parser.add_argument("-d", "--destination", help="Path destination for the pictures", default = os.getcwd())
     parser.add_argument("-c", "--cut", help="Min time between two pictures to create a new group (in seconds)", default = 10, type = int)
     args = parser.parse_args()
     print(args)
