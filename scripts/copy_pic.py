@@ -55,7 +55,7 @@ def arg_parse():
     
     parser.add_argument("-s", "--source", help="Name of the volume's sources", default = "avant, droite, arriere, gauche")
     parser.add_argument("-d", "--destination", help="Path destination for the pictures", default = os.getcwd())
-    parser.add_argument("-c", "--cut", help="Min time between two pictures to create a new group (in seconds)", default = 10)
+    parser.add_argument("-c", "--cut", help="Min time between two pictures to create a new group (in seconds)", default = 10, type = int)
     args = parser.parse_args()
     print(args)
     return args
@@ -282,7 +282,7 @@ if __name__ == '__main__':
     
     args = arg_parse()	
     dest_folder = args.destination
-    cutoff = int(args.cut)
+    cutoff = args.cut
     volume_names = [volume.strip() for volume in args.source.lower().split(",")]
     print "Searching for volumes...."
     alldrivelist = get_drivelist()
