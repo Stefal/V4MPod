@@ -276,16 +276,11 @@ if __name__ == '__main__':
         gap = (t2-t1)
         #print gap.total_seconds()   
         if gap.total_seconds() >= cutoff:
-           print "YALLLAAAAAAAAAAAAAAAAAA", gap.total_seconds()
            groups.append(path2)
 
     for i, group in enumerate(groups):
         groups[i] = find_in_sublist(piclist, group)
         print "Group {0} start : {1}".format(i+1, piclist[groups[i]][2].strftime("%Y-%m-%d_%HH%Mmn%Ss"))
-        #pour effacer un groupe situé à la fin : del piclist[image de début du group:len(piclist)]
-        #pour effacer un groupe situé au début :
-        # Non, il vaudrait mieux indiquer les indexes de début et fin lorsqu'on appelle la fonction make_pics_groups
-        #mais il faut faire attention au contenu de la liste groups qui peut être en dehors des images contenues dans la liste indexée.	
 
     input_validity = False
     while input_validity == False:
