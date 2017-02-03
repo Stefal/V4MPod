@@ -1,8 +1,50 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#source : http://stackoverflow.com/questions/12672981/python-os-independent-list-of-available-storage-devices
+"""
+Script for simultaneously copying the pictures from up to 6 cameras.
+The primary goal is to copy the pictures from 4 action-cams, make groups of pictures with a cutoff time, create
+a subfolder for each cam and copy the renamed pictures (timestamp added to the filename).
+Let's say you have two cams, with sd cards named "front" and "back".
 
+front sdcard :
+ROOT/DCIM/YDXJ0025.jpg (timestamp is 2017-02-01_11h21mn10s)
+ROOT/DCIM/YDXJ0026.jpg (timestamp is 2017-02-01_11h21mn11s)
+ROOT/DCIM/YDXJ0027.jpg (timestamp is 2017-02-01_11h21mn12s)
+ROOT/DCIM/YDXJ0028.jpg (timestamp is 2017-02-01_11h26mn42s)
+ROOT/DCIM/YDXJ0029.jpg (timestamp is 2017-02-01_11h26mn43s)
+
+back sdcard :
+ROOT/DCIM/YDXJ0112.jpg (timestamp is 2017-02-01_11h21mn10s)
+ROOT/DCIM/YDXJ0113.jpg (timestamp is 2017-02-01_11h21mn11s)
+ROOT/DCIM/YDXJ0114.jpg (timestamp is 2017-02-01_11h21mn12s)
+ROOT/DCIM/YDXJ0115.jpg (timestamp is 2017-02-01_11h26mn42s)
+ROOT/DCIM/YDXJ0116.jpg (timestamp is 2017-02-01_11h26mn43s)
+
+with the command:
+python copy_pic -s front,back -d /test/ -c 60
+
+In your test folder you will get:
+2017-02-01_11h21mn10s|
+		     |front|
+		     	   |2017-02-01_11h21mn10s-Cam_front-YDXJ0025.jpg
+			   |2017-02-01_11h21mn11s-Cam_front-YDXJ0026.jpg
+			   |2017-02-01_11h21mn12s-Cam_front-YDXJ0027.jpg
+		     |back |
+			   |2017-02-01_11h21mn10s-Cam_back-YDXJ0112.jpg
+			   |2017-02-01_11h21mn11s-Cam_back-YDXJ0113.jpg
+			   |2017-02-01_11h21mn12s-Cam_back-YDXJ0114.jpg
+2017-02-01_11h26mn42s|
+		     |front|
+		     	   |2017-02-01_11h26mn42s-Cam_front-YDXJ0028.jpg
+			   |2017-02-01_11h26mn43s-Cam_front-YDXJ0029.jpg
+		     |back |
+		     	   |2017-02-01_11h26mn42s-Cam_back-YDXJ0115.jpg
+			   |2017-02-01_11h26mn43s-Cam_back-YDXJ0116.jpg
+
+
+#source : http://stackoverflow.com/questions/12672981/python-os-independent-list-of-available-storage-devices
+"""
 import os, psutil, subprocess, sys, pyexiv2, datetime, shutil, time, argparse
 from threading import Thread
 from Queue import Queue
