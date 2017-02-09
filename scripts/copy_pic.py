@@ -45,6 +45,10 @@ In your test folder you will get:
 
 #source : http://stackoverflow.com/questions/12672981/python-os-independent-list-of-available-storage-devices
 """
+""" TODO :
+- Add a parameter to skip the "group to copy" question
+- Calculate the total size to copy, and the space left on the destination
+"""
 import os, psutil, subprocess, sys, pyexiv2, datetime, shutil, time, argparse
 from threading import Thread
 from Queue import Queue
