@@ -299,9 +299,11 @@ if __name__ == '__main__':
     for drive in drivelist:
         print "Volume found: {}   ({})".format(drive[0], drive[1])
     if len(drivelist) == 0:
-        print "No volume found !!"
-        exit
+        sys.exit("No Volume found !")
 
+    # Check if destination is a source too (bad idea)
+    if find_in_sublist([[drive.lower() for drive in drivedetail] for drivedetail in drivelist], os.path.splitdrive(dest_folder)[0].lower()) >= 0:
+        sys.exit("Destination is the same as one source.... Exiting")
 
     piclist = []
     print "Searching for pictures..."
