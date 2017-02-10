@@ -300,6 +300,10 @@ if __name__ == '__main__':
         print "Volume found: {}   ({})".format(drive[0], drive[1])
     if len(drivelist) == 0:
         sys.exit("No Volume found !")
+    if len(drivelist) > 6:
+        sys.exit("Sorry, this script can't manage more than 6 sources \
+                If you need more, add some queues and thread, or \
+                rewrite the multithread part of this script to dynamicaly handle the number of sources")
 
     # Check if destination is a source too (bad idea)
     if find_in_sublist([[drive.lower() for drive in drivedetail] for drivedetail in drivelist], os.path.splitdrive(dest_folder)[0].lower()) >= 0:
@@ -348,10 +352,6 @@ if __name__ == '__main__':
     groups_start = int(user_input[0]) - 1
     groups_end = int(user_input[1])
 
-    if len(drivelist) > 6:
-        print "Sorry, this script can't manage more than 6 sources \
-                If you need more, add some queues and thread, or \
-                rewrite the multithread part of this script to dynamicaly handle the number of sources"
 	
     picQueue0 = Queue()
     picQueue1 = Queue()
