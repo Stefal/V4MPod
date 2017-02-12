@@ -60,6 +60,7 @@ def arg_parse():
     parser.add_argument("destination", nargs="?", help="Path destination for the pictures", default = os.getcwd())
     parser.add_argument("-s", "--source", help="Name of the volume's sources", default = "avant, droite, arriere, gauche")
     parser.add_argument("-c", "--cut", help="Min time between two pictures to create a new group (in seconds)", default = 10, type = int)
+    parser.add_argument("-a", "--allgroups", help="Copy all groups of pictures without asking.", action="store_true")
     args = parser.parse_args()
     print(args)
     return args
@@ -287,6 +288,7 @@ if __name__ == '__main__':
     args = arg_parse()	
     dest_folder = args.destination
     cutoff = args.cut
+    allgroups = args.allgroups
     volume_names = [volume.strip() for volume in args.source.lower().split(",")]
     print "Searching for volumes...."
     alldrivelist = get_drivelist()
@@ -336,7 +338,11 @@ if __name__ == '__main__':
 
     input_validity = False
     while input_validity == False:
-        user_input = raw_input("\nEnter the group' number you want to copy\nOr enter the group range (e.g. 2-4 to copy the groups 2,3 and 4),\nOr press enter to copy all groups : ").split("-")
+        if not allgroups:
+            user_input = raw_input("\nEnter the group' number you want to copy\nOr enter the group range (e.g. 2-4 to copy the groups 2,3 and 4),\nOr press enter to copy all groups : ").split("-")
+        else:
+            user_input = ['']
+
         if user_input == ['']:
                 user_input[0] = 1
                 user_input.append(len(groups))
