@@ -128,7 +128,9 @@ def get_drive_path(volumename, alldrivelist, drive_type=None):
                 if volumename in elt.lower():
                     return elt
     elif 'macosx' in sys.platform:
-        pass
+        for drive in alldrivelist:
+            if drive.lower() == volumename.lower():
+                return "/Volumes/" + drive
 
 
 def get_drivelist():
@@ -162,7 +164,7 @@ def get_drivelist():
     # guess how it should be on mac os, similar to linux , the mount command should
     # work, but I can't verify it...
     elif 'macosx':
-        pass
+        drivelist = os.listdir("/Volumes")
 
     return drivelist
 
