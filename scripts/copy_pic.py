@@ -138,7 +138,7 @@ def get_drivelist():
 	- Windows:  return host, name,volumename, drivetype, volumeserialnumber
 	- Gnu/Linux: /proc/mounts files content, filtered (only dev/sdx lines)
 	"""
-    if 'win' in sys.platform:
+    if 'win32' in sys.platform:
         drivelist = subprocess.Popen('wmic logicaldisk get name,volumename, drivetype, volumeserialnumber /format:CSV',
                                      shell=True, stdout=subprocess.PIPE)
         drivelistout, err = drivelist.communicate()
@@ -163,7 +163,7 @@ def get_drivelist():
 
     # guess how it should be on mac os, similar to linux , the mount command should
     # work, but I can't verify it...
-    elif 'macosx':
+    elif 'darwin':
         drivelist = os.listdir("/Volumes")
 
     return drivelist
