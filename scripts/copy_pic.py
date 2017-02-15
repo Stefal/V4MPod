@@ -118,7 +118,7 @@ def get_drive_path(volumename, alldrivelist, drive_type=None):
 	"""
     if drive_type != None:
         alldrivelist = [drive for drive in alldrivelist if drive[drive_type_index] == drive_type]
-    if 'win' in sys.platform:
+    if 'win32' in sys.platform:
         for drive in alldrivelist:
             if drive[3].lower() == volumename:
                 return drive[2]
@@ -127,7 +127,7 @@ def get_drive_path(volumename, alldrivelist, drive_type=None):
             for elt in drive.split():
                 if volumename in elt.lower():
                     return elt
-    elif 'macosx' in sys.platform:
+    elif 'darwin' in sys.platform:
         for drive in alldrivelist:
             if drive.lower() == volumename.lower():
                 return "/Volumes/" + drive
