@@ -49,7 +49,7 @@ In your test folder you will get:
 - Add a parameter to skip the "group to copy" question
 - Calculate the total size to copy, and the space left on the destination
 """
-import os, psutil, subprocess, sys, pyexiv2, datetime, shutil, time, argparse
+import os, subprocess, sys, pyexiv2, datetime, shutil, time, argparse
 from threading import Thread
 from Queue import Queue
 
