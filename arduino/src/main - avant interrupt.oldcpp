@@ -1,0 +1,121 @@
+/*
+Première version du programme de controle des Yi
+*/
+#include <Arduino.h>
+
+
+const int shutter_pin = 2;
+const int power_pin = 4;
+const int powerup_button_pin = 5;
+const int powerdown_button_pin = 6;
+const int tmlapse_start_pin = 7;
+const int tmlapse_stop_pin = 8;
+const int shutter_led_pin = A5;
+const int shutter_button_pin = 9;
+
+int pic_count = 0; // picture counter
+int after_pic_delay = 700;
+long old_timestamp = 0;
+long current_timestamp = 0;
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(shutter_pin, OUTPUT);
+  pinMode(power_pin, OUTPUT);
+  pinMode(powerup_button_pin, INPUT_PULLUP);
+  pinMode(powerdown_button_pin, INPUT_PULLUP);
+  pinMode(tmlapse_start_pin, INPUT_PULLUP);
+  pinMode(tmlapse_stop_pin, INPUT_PULLUP);
+  pinMode(shutter_button_pin, INPUT_PULLUP);
+  pinMode(shutter_led_pin, INPUT);
+  Serial.begin(9600);
+  Serial.println("Starting program");
+
+}
+
+void power_up_Yi(/* arguments */) {
+  Serial.println("Starting the Yi");
+  digitalWrite(power_pin, HIGH); // mise en marche caméra
+  delay(500);
+  digitalWrite(power_pin, LOW);
+  Serial.println("Pause during the boot");
+  delay(10000); //attente mise en route
+  Serial.println("The cams should be ready");
+}
+
+void power_down_Yi(/* arguments */) {
+  Serial.println("Shutting down the Yi");
+  digitalWrite(power_pin, HIGH); // Arrêt de la caméra
+  delay(2500);
+  digitalWrite(power_pin, LOW);
+}
+
+long take_picture() {
+  Serial.println("Taking picture...");
+  long pic_start_time = millis();
+  int shutter_return = LOW;
+  digitalWrite(shutter_pin, HIGH);
+  delay(100);
+  digitalWrite(shutter_pin, LOW);
+  while (shutter_return != HIGH) {
+    /*Serial.print("Analog in : ");
+    Serial.println(analogRead(shutter_led_pin));*/
+    if (analogRead(shutter_led_pin) > 400) {
+      shutter_return = HIGH;
+    }
+    if (millis()-pic_start_time > 2500) {
+      Serial.println("No response");
+      return 0;
+    }
+  }
+  Serial.println("Shutter led detected");
+  Serial.println("Pause");
+  delay(after_pic_delay);
+  Serial.println("End of pause");
+  return pic_start_time;
+}
+
+void timelapse(/* arguments */) {
+  Serial.println("Starting timelapse");
+  int pic_shutter_request = 0;
+  int pic_shutter_taken = 0;
+  while (true) {
+    current_timestamp = take_picture();
+    pic_shutter_request++;
+    Serial.print("Interval : ");
+    Serial.print(current_timestamp - old_timestamp);
+    Serial.println("ms");
+    if (current_timestamp != 0) {
+      old_timestamp = current_timestamp;
+      pic_shutter_taken++;
+      Serial.print("Successful pictures : ");
+      Serial.print(pic_shutter_taken);
+      Serial.print(" of ");
+      Serial.println(pic_shutter_request);
+    }
+
+    if (digitalRead(tmlapse_stop_pin) == LOW) {
+      Serial.println("Timelapse stopped");
+      break;
+    }
+  }
+}
+
+void loop() {
+
+  if (digitalRead(powerup_button_pin) == LOW) {
+    power_up_Yi();
+  }
+
+  if (digitalRead(powerdown_button_pin) == LOW) {
+    power_down_Yi();
+  }
+
+  if (digitalRead(shutter_button_pin) == LOW) {
+    Serial.println(take_picture());
+  }
+
+  if (digitalRead(tmlapse_start_pin) == LOW) {
+    timelapse();
+  }
+
+}
