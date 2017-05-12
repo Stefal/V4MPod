@@ -163,39 +163,6 @@ void power_down_Yi(const byte cam_range) {
   expanderWrite(mcp1, GPIOA, 0b00000000);
 }
 
-//Take a picture
-long take_picture(const byte cam_range) {
-  Serial.println("Taking picture...");
-  long pic_start_time = millis();
-  int shutter_return = LOW;
-  shutter_led_counter = 0;
-  int sht_LedToggle_array[8] = {0,0,0,0,0,0,0,0}; //Reset the array
-  //Set expander n°1 GPIOB to HIGH
-  expanderWrite(mcp1, GPIOB, cam_range);
-  delay(100);
-  //Set expander n°1 GPIOB to LOW
-  expanderWrite(mcp1, GPIOB, 0b00000000);
-
-  while (shutter_led_counter == 0) { // Wait for the shutter led return
-
-    if (millis()-pic_start_time > 2500) {
-      Serial.println("No response");
-      return 0;
-    }
-  }
-
-  Serial.println("Shutter led detected");
-  Serial.println("Pause");
-  delay(after_pic_delay);
-  if (shutter_led_counter > 1) {
-    Serial.print("ERROR ! counter = ");
-    Serial.println(shutter_led_counter);
-    return -1;
-  }
-  Serial.println("End of pause");
-  return pic_start_time;
-}
-
 void handle_Sht_led_activity ()
 {
   unsigned int sht_LedValue = 0;
@@ -265,6 +232,59 @@ void handle_Sht_led_activity ()
 
 }  // end of handle_Sht_led_activity
 
+//Take a picture
+long take_picture(const byte cam_range) {
+  Serial.println("Taking picture...");
+  long pic_start_time = millis();
+  byte shutter_led_check = 0b00000000;
+  int sht_LedToggle_array[8] = {0,0,0,0,0,0,0,0}; //Reset the array
+
+  //Set expander n°1 GPIOB to HIGH to "press" the shutter button
+  expanderWrite(mcp1, GPIOB, cam_range);
+  delay(100);
+  //Set expander n°1 GPIOB to LOW to "release" the shutter button
+  expanderWrite(mcp1, GPIOB, 0b00000000);
+
+  while (shutter_led_check != cam_range) { // Wait for the shutter led return
+    if (sht_led_activity) {
+      handle_Sht_led_activity();
+
+      for (byte sht_Led = 0; sht_Led < 8; sht_Led++)
+      {
+        if ((sht_LedToggle_array[sht_Led] == 2) & (cam_range & (1 << sht_Led)))
+          shutter_led_check = shutter_led_check & (1 << sht_Led);
+        }
+      }
+    if (millis()-pic_start_time > 2500) {
+      Serial.println("No response");
+      return 0;
+    }
+  }
+  Serial.println("Shutter leds detected");
+
+  Serial.println("Pause");
+  unsigned long delay_Start_Time = millis();
+  // Wait for the cams to be ready, and check interrupt in case of a failure
+  while (millis() < (delay_Start_Time + after_pic_delay)) {
+    if (sht_led_activity) {
+      handle_Sht_led_activity();
+      for (byte sht_Led = 0; sht_Led < 8; sht_Led++)
+      {
+        if (sht_LedToggle_array[sht_Led] >= 2)
+        {
+          Serial.print("Error on cam n°");
+          Serial.println(sht_Led);
+        }
+      }
+
+    }
+  return -1;
+    }
+  Serial.println("End of pause");
+  return pic_start_time;
+}
+
+
 void timelapse(const byte cam_range) {
   Serial.println("Starting timelapse");
   int pic_shutter_request = 0;
@@ -310,6 +330,7 @@ void loop() {
   if (digitalRead(tmlapse_start_pin) == LOW) {
     timelapse(cam_range);
   }
+
   // turn LED off after 500 ms
   if (millis () > (time + 200) && time != 0)
    {
