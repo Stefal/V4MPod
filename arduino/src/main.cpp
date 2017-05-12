@@ -20,6 +20,7 @@ int after_pic_delay = 800;
 volatile int shutter_led_counter = 0;
 long old_timestamp = 0;
 long current_timestamp = 0;
+const byte cam_range = 0b00000001;
 
 // MCP23017 registers (everything except direction defaults to 0)
 
@@ -51,10 +52,12 @@ long current_timestamp = 0;
 
 #define ISR_INDICATOR 12  // pin 12
 #define ONBOARD_LED 13    // pin 13
-volatile bool keyPressed;
+volatile bool sht_led_activity;
+int sht_LedToggle_array[8];
+unsigned long time = 0;
 
-void expanderWrite (const byte port, const byte reg, const byte data )
-{
+
+void expanderWrite (const byte port, const byte reg, const byte data ){
   Wire.beginTransmission (port);
   Wire.write (reg);
   Wire.write (data);
@@ -62,8 +65,7 @@ void expanderWrite (const byte port, const byte reg, const byte data )
 } // end of expanderWrite
 
 // read a byte from the expander
-unsigned int expanderRead (const byte port, const byte reg)
-{
+unsigned int expanderRead (const byte port, const byte reg){
   Wire.beginTransmission (port);
   Wire.write (reg);
   Wire.endTransmission ();
@@ -75,7 +77,7 @@ unsigned int expanderRead (const byte port, const byte reg)
 void mcp2_interrupt ()
 {
   digitalWrite (ISR_INDICATOR, HIGH);  // debugging
-  keyPressed = true;   // set flag so main loop knows
+  sht_led_activity = true;   // set flag so main loop knows
 }  // end of mcp2_interrupt
 
 void myISR() {
@@ -112,7 +114,7 @@ void setup() {
   expanderWrite(mcp2, INTCONA, 0b00000000);// Active le mode "on change"
   // FIN MES TESTS
   // no interrupt yet
-  keyPressed = false;
+  sht_led_activity = false;
 
   // read from interrupt capture ports to clear them
   expanderRead (mcp2, INTCAPA);
@@ -137,10 +139,10 @@ void setup() {
 
 }
 
-void power_up_Yi(/* arguments */) {
+void power_up_Yi(const byte cam_range) {
   Serial.println("Starting the Yi");
   //Set expander n°1 GPIOA to HIGH
-  expanderWrite(mcp1, GPIOA, 0b11111111);
+  expanderWrite(mcp1, GPIOA, cam_range);
 
   delay(500);
   //Set expander n°1 GPIOA to LOW
@@ -151,40 +153,37 @@ void power_up_Yi(/* arguments */) {
   Serial.println("The cams should be ready");
 }
 
-void power_down_Yi(/* arguments */) {
+void power_down_Yi(const byte cam_range) {
   Serial.println("Shutting down the Yi");
   //Set expander n°1 GPIOA to HIGH
-  expanderWrite(mcp1, GPIOA, 0b11111111);
+  expanderWrite(mcp1, GPIOA, cam_range);
 
   delay(2500);
   //Set expander n°1 GPIOA to LOW
   expanderWrite(mcp1, GPIOA, 0b00000000);
 }
 
-long take_picture() {
+//Take a picture
+long take_picture(const byte cam_range) {
   Serial.println("Taking picture...");
   long pic_start_time = millis();
   int shutter_return = LOW;
   shutter_led_counter = 0;
-
+  int sht_LedToggle_array[8] = {0,0,0,0,0,0,0,0}; //Reset the array
   //Set expander n°1 GPIOB to HIGH
-  expanderWrite(mcp1, GPIOB, 0b11111111);
-
+  expanderWrite(mcp1, GPIOB, cam_range);
   delay(100);
-
   //Set expander n°1 GPIOB to LOW
   expanderWrite(mcp1, GPIOB, 0b00000000);
 
-  while (shutter_led_counter == 0) {
-    /*Serial.print("Analog in : ");
-    Serial.println(analogRead(A5));*/
-    //Serial.println(shutter_led_counter);
-    //Serial.println(digitalRead(3));
+  while (shutter_led_counter == 0) { // Wait for the shutter led return
+
     if (millis()-pic_start_time > 2500) {
       Serial.println("No response");
       return 0;
     }
   }
+
   Serial.println("Shutter led detected");
   Serial.println("Pause");
   delay(after_pic_delay);
@@ -197,12 +196,81 @@ long take_picture() {
   return pic_start_time;
 }
 
-void timelapse(/* arguments */) {
+void handle_Sht_led_activity ()
+{
+  unsigned int sht_LedValue = 0;
+  unsigned int sht_LedLastValue = 0;
+
+  sht_led_activity = false;  // ready for next time through the interrupt service routine
+  digitalWrite (ISR_INDICATOR, LOW);  // debugging
+
+  // Read port values, as required. Note that this re-arms the interrupts.
+
+  if (expanderRead (mcp2, INFTFB))
+    {
+
+    sht_LedValue |= expanderRead (mcp2, INTCAPB);        // port B is in low-order byte
+    }
+
+  /*Serial.print("sht_LedValue : ");
+  Serial.println(sht_LedValue, BIN);
+  Serial.print("last State : ");
+  Serial.println(sht_LedLastValue, BIN);
+  Serial.print("Ou exclusif : ");
+  Serial.println(sht_LedLastValue ^ sht_LedValue, BIN);
+  Serial.println("");*/
+  Serial.println ("Led toggles");
+  //Serial.println ("0                   1");
+  Serial.println ("00 01 02 03 04 05 06 07");
+
+  // display which buttons were down at the time of the interrupt
+  for (byte sht_Led = 0; sht_Led < 8; sht_Led++)
+    {
+    // this key down?
+    /*Serial.print("sht_Led : ");
+    Serial.println(1<< sht_Led, BIN);
+    Serial.print("résultat de : ");
+    Serial.print(sht_LedLastValue, BIN);
+    Serial.print(" ^ ");
+    Serial.print(sht_LedValue, BIN);
+    Serial.print(" & ");
+    Serial.print("1 << ");
+    Serial.print(sht_Led, BIN);
+    Serial.print(" : ");
+    Serial.println(((sht_LedLastValue ^ sht_LedValue) & (1 << sht_Led)));
+    Serial.print("calcul d origine : ");
+    Serial.println(sht_LedValue & (1 << sht_Led), BIN);*/
+    if ((sht_LedLastValue ^ sht_LedValue) & (1 << sht_Led)){
+      //Serial.print ("01 ");
+      sht_LedToggle_array[sht_Led]+=1;
+      Serial.print(sht_LedToggle_array[sht_Led]);
+      Serial.print(" ");
+      }
+    else {
+      //Serial.print ("00 ");
+      Serial.print(sht_LedToggle_array[sht_Led]);
+      Serial.print(" ");
+      }
+
+    }
+  sht_LedLastValue = sht_LedValue;
+  Serial.println ();
+
+  // if a switch is now pressed, turn LED on  (key down event)
+  if (sht_LedValue)
+    {
+    time = millis ();  // remember when
+    digitalWrite (ONBOARD_LED, HIGH);  // on-board LED
+    }  // end if
+
+}  // end of handle_Sht_led_activity
+
+void timelapse(const byte cam_range) {
   Serial.println("Starting timelapse");
   int pic_shutter_request = 0;
   int pic_shutter_taken = 0;
   while (true) {
-    current_timestamp = take_picture();
+    current_timestamp = take_picture(cam_range);
     pic_shutter_request++;
     Serial.print("Interval : ");
     Serial.print(current_timestamp - old_timestamp);
@@ -228,19 +296,25 @@ void timelapse(/* arguments */) {
 void loop() {
 
   if (digitalRead(powerup_button_pin) == LOW) {
-    power_up_Yi();
+    power_up_Yi(cam_range);
   }
 
   if (digitalRead(powerdown_button_pin) == LOW) {
-    power_down_Yi();
+    power_down_Yi(cam_range);
   }
 
   if (digitalRead(shutter_button_pin) == LOW) {
-    Serial.println(take_picture());
+    Serial.println(take_picture(cam_range));
   }
 
   if (digitalRead(tmlapse_start_pin) == LOW) {
-    timelapse();
+    timelapse(cam_range);
   }
+  // turn LED off after 500 ms
+  if (millis () > (time + 200) && time != 0)
+   {
+    digitalWrite (ONBOARD_LED, LOW);
+    time = 0;
+   }  // end if time up
 
 }

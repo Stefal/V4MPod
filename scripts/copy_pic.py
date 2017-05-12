@@ -46,7 +46,6 @@ In your test folder you will get:
 #source : http://stackoverflow.com/questions/12672981/python-os-independent-list-of-available-storage-devices
 """
 """ TODO :
-- Add a parameter to skip the "group to copy" question
 - Calculate the total size to copy, and the space left on the destination
 """
 import os, subprocess, sys, pyexiv2, datetime, shutil, time, argparse
@@ -59,7 +58,8 @@ def arg_parse():
     parser = argparse.ArgumentParser(description="A tool to copy pictures from multiple external sources",
                                      version="0.01")
 
-    parser.add_argument("destination", nargs="?", help="Path destination for the pictures", default=os.getcwd())
+    parser.add_argument("destination", nargs="?", help="Path destination for the pictures. Without this parameter, "
+                                                       "the script will use the current directory as the destination", default=os.getcwd())
     parser.add_argument("-s", "--source", help="Name of the volume's sources", default="avant, droite, arriere, gauche")
     parser.add_argument("-c", "--cut", help="Min time between two pictures to create a new group (in seconds)",
                         default=10, type=int)
