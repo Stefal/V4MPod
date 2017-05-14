@@ -85,8 +85,11 @@ void myISR() {
 }
 
 void setup() {
-  // put your setup code here, to run once:
-
+  pinMode (ISR_INDICATOR, OUTPUT);  // for testing (ISR indicator)
+  pinMode (ONBOARD_LED, OUTPUT);  // for onboard LED
+  Serial.begin(9600);
+  Serial.println("Starting program");
+  Wire.begin ();
   // Set expander n°1 I/O as output
   expanderWrite(mcp1, IODIRA, 0x00);
   expanderWrite(mcp1, IODIRB, 0x00);
@@ -95,20 +98,19 @@ void setup() {
   expanderWrite(mcp2, IODIRA, 0x00);
   expanderWrite(mcp2, IODIRB, 0x00);
 
-  // expander configuration register
-  expanderWrite(mcp2, IOCON, 0b00100010); // no mirror interrupts, disable sequential mode, active HIGH
-
+  // TODO set dynamically the pins as output
+  // enable GPIOA pins as input
+  expanderWrite(mcp2, IODIRA, 0xFF);
   // enable pull-up on switches
-  //expanderWrite (GPPUA, 0xFF);   // pull-up resistor for switch - both ports
+  expanderWrite(mcp2, GPPUA, 0xFF);
+  // expander configuration register
+  expanderWrite(mcp2, IOCON, 0b01100010); // no mirror interrupts, disable sequential mode, active HIGH
 
   // invert polarity
   //expanderWrite(mcp2, IOPOLA, 0xFF);  // invert polarity of signal - both ports
 
-  // enable all interrupts
-  expanderWrite (mcp2, GPINTENA, 0xFF); // enable interrupts - both ports
-
-  // MES TESTS
-  //expanderWriteBoth (IOPOLA, 0x00);  // polarity of signal - both ports
+  // enable interrupts
+  expanderWrite (mcp2, GPINTENA, cam_range); // enable interrupts
 
   //expanderWriteBoth(DEFVALA, 0b00000000); // defini la valeur par défaut à 0
   expanderWrite(mcp2, INTCONA, 0b00000000);// Active le mode "on change"
@@ -122,7 +124,7 @@ void setup() {
 
   // pin 19 of MCP23017 is plugged into D2 of the Arduino which is interrupt 0
   attachInterrupt(0, mcp2_interrupt, RISING);
-
+  //attachInterrupt(digitalPinToInterrupt(shutter_led_pin), mcp2_interrupt, CHANGE);
 
   // pinMode(shutter_pin, OUTPUT);
   // pinMode(power_pin, OUTPUT);
@@ -132,10 +134,9 @@ void setup() {
   pinMode(tmlapse_stop_pin, INPUT_PULLUP);
   pinMode(shutter_button_pin, INPUT_PULLUP);
   pinMode(shutter_led_pin, INPUT);
-  pinMode(A5, INPUT);
-  attachInterrupt(digitalPinToInterrupt(shutter_led_pin), myISR, RISING);
-  Serial.begin(9600);
-  Serial.println("Starting program");
+  //pinMode(A5, INPUT);
+  //attachInterrupt(digitalPinToInterrupt(shutter_led_pin), myISR, RISING);
+
 
 }
 
@@ -167,46 +168,32 @@ void handle_Sht_led_activity ()
 {
   unsigned int sht_LedValue = 0;
   unsigned int sht_LedLastValue = 0;
-
+  //Serial.println("Inside handle_Sht_led_activity function");
   sht_led_activity = false;  // ready for next time through the interrupt service routine
   digitalWrite (ISR_INDICATOR, LOW);  // debugging
 
   // Read port values, as required. Note that this re-arms the interrupts.
 
-  if (expanderRead (mcp2, INFTFB))
+  if (expanderRead (mcp2, INFTFA))
     {
 
-    sht_LedValue |= expanderRead (mcp2, INTCAPB);        // port B is in low-order byte
+    sht_LedValue |= expanderRead (mcp2, INTCAPA);        // port B is in low-order byte
     }
 
-  /*Serial.print("sht_LedValue : ");
-  Serial.println(sht_LedValue, BIN);
-  Serial.print("last State : ");
-  Serial.println(sht_LedLastValue, BIN);
-  Serial.print("Ou exclusif : ");
-  Serial.println(sht_LedLastValue ^ sht_LedValue, BIN);
-  Serial.println("");*/
-  Serial.println ("Led toggles");
+    Serial.print("sht_LedValue : ");
+    Serial.println(sht_LedValue, BIN);
+    Serial.print("last State : ");
+    Serial.println(sht_LedLastValue, BIN);
+    Serial.print("Ou exclusif : ");
+    Serial.println(sht_LedLastValue ^ sht_LedValue, BIN);
+    Serial.println("");
+  Serial.println ("Shutter Led toggles");
   //Serial.println ("0                   1");
-  Serial.println ("00 01 02 03 04 05 06 07");
+  Serial.println ("0 1 2 3 4 5 6 7");
 
   // display which buttons were down at the time of the interrupt
   for (byte sht_Led = 0; sht_Led < 8; sht_Led++)
     {
-    // this key down?
-    /*Serial.print("sht_Led : ");
-    Serial.println(1<< sht_Led, BIN);
-    Serial.print("résultat de : ");
-    Serial.print(sht_LedLastValue, BIN);
-    Serial.print(" ^ ");
-    Serial.print(sht_LedValue, BIN);
-    Serial.print(" & ");
-    Serial.print("1 << ");
-    Serial.print(sht_Led, BIN);
-    Serial.print(" : ");
-    Serial.println(((sht_LedLastValue ^ sht_LedValue) & (1 << sht_Led)));
-    Serial.print("calcul d origine : ");
-    Serial.println(sht_LedValue & (1 << sht_Led), BIN);*/
     if ((sht_LedLastValue ^ sht_LedValue) & (1 << sht_Led)){
       //Serial.print ("01 ");
       sht_LedToggle_array[sht_Led]+=1;
@@ -237,7 +224,8 @@ long take_picture(const byte cam_range) {
   Serial.println("Taking picture...");
   long pic_start_time = millis();
   byte shutter_led_check = 0b00000000;
-  int sht_LedToggle_array[8] = {0,0,0,0,0,0,0,0}; //Reset the array
+  memset(sht_LedToggle_array,0,sizeof(sht_LedToggle_array
+  )); //Reset the array
 
   //Set expander n°1 GPIOB to HIGH to "press" the shutter button
   expanderWrite(mcp1, GPIOB, cam_range);
@@ -251,8 +239,14 @@ long take_picture(const byte cam_range) {
 
       for (byte sht_Led = 0; sht_Led < 8; sht_Led++)
       {
-        if ((sht_LedToggle_array[sht_Led] == 2) & (cam_range & (1 << sht_Led)))
-          shutter_led_check = shutter_led_check & (1 << sht_Led);
+        if ((sht_LedToggle_array[sht_Led] == 1) & (cam_range & (1 << sht_Led)))
+          {
+          shutter_led_check = shutter_led_check ^ (1 << sht_Led);
+          Serial.print("1 << sht_Led : ");
+          Serial.println(1 << sht_Led, BIN);
+          Serial.print("shutter_led_check : ");
+          Serial.println(shutter_led_check, BIN);
+        }
         }
       }
     if (millis()-pic_start_time > 2500) {
@@ -270,15 +264,16 @@ long take_picture(const byte cam_range) {
       handle_Sht_led_activity();
       for (byte sht_Led = 0; sht_Led < 8; sht_Led++)
       {
-        if (sht_LedToggle_array[sht_Led] >= 2)
+        if ((sht_LedToggle_array[sht_Led] > 1) & (cam_range & (1 << sht_Led)))
         {
           Serial.print("Error on cam n°");
           Serial.println(sht_Led);
+          return -1;
         }
       }
 
     }
-  return -1;
+
     }
   Serial.println("End of pause");
   return pic_start_time;
