@@ -180,7 +180,7 @@ void handle_Sht_led_activity ()
     sht_LedValue |= expanderRead (mcp2, INTCAPA);        // port B is in low-order byte
     }
 
-    Serial.print("sht_LedValue : ");
+    /*Serial.print("sht_LedValue : ");
     Serial.println(sht_LedValue, BIN);
     Serial.print("last State : ");
     Serial.println(sht_LedLastValue, BIN);
@@ -189,7 +189,7 @@ void handle_Sht_led_activity ()
     Serial.println("");
   Serial.println ("Shutter Led toggles");
   //Serial.println ("0                   1");
-  Serial.println ("0 1 2 3 4 5 6 7");
+  Serial.println ("0 1 2 3 4 5 6 7");*/
 
   // display which buttons were down at the time of the interrupt
   for (byte sht_Led = 0; sht_Led < 8; sht_Led++)
@@ -197,18 +197,17 @@ void handle_Sht_led_activity ()
     if ((sht_LedLastValue ^ sht_LedValue) & (1 << sht_Led)){
       //Serial.print ("01 ");
       sht_LedToggle_array[sht_Led]+=1;
-      Serial.print(sht_LedToggle_array[sht_Led]);
-      Serial.print(" ");
+      /*Serial.print(sht_LedToggle_array[sht_Led]);
+      Serial.print(" ");*/
       }
     else {
       //Serial.print ("00 ");
-      Serial.print(sht_LedToggle_array[sht_Led]);
-      Serial.print(" ");
+      /*Serial.print(sht_LedToggle_array[sht_Led]);
+      Serial.print(" ");*/
       }
 
     }
   sht_LedLastValue = sht_LedValue;
-  Serial.println ();
 
   // if a switch is now pressed, turn LED on  (key down event)
   if (sht_LedValue)
@@ -241,11 +240,11 @@ long take_picture(const byte cam_range) {
       {
         if ((sht_LedToggle_array[sht_Led] == 1) & (cam_range & (1 << sht_Led)))
           {
-          shutter_led_check = shutter_led_check ^ (1 << sht_Led);
-          Serial.print("1 << sht_Led : ");
+          shutter_led_check = shutter_led_check | (1 << sht_Led);
+          /*Serial.print("1 << sht_Led : ");
           Serial.println(1 << sht_Led, BIN);
           Serial.print("shutter_led_check : ");
-          Serial.println(shutter_led_check, BIN);
+          Serial.println(shutter_led_check, BIN);*/
         }
         }
       }
