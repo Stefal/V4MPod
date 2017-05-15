@@ -3,10 +3,12 @@ Première version du programme de controle des Yi
 */
 #include <Arduino.h>
 #include <Wire.h>
+#include <Adafruit_MAX31855.h>
+#include <CmdMessenger.h>
+#include <SPI.h>
 
 
-//const int shutter_pin = 2;
-//const int power_pin = 4;
+
 const int powerup_button_pin = 5;
 const int powerdown_button_pin = 6;
 const int tmlapse_start_pin = 7;
@@ -56,7 +58,19 @@ volatile bool sht_led_activity;
 int sht_LedToggle_array[8];
 unsigned long time = 0;
 
+// Function prototypes
+void attachCommandCallbacks(void);
+void OnCommandList(void);
+void power_up_Yi(const byte cam_range);
+void power_down_Yi(const byte cam_range);
+unsigned long take_picture(const byte cam_range);
+void ShowCommands(void);
+void OnTake_picture(void);
+void OnPower_up_Yi(void);
 
+
+
+// End of Function prototypes
 void expanderWrite (const byte port, const byte reg, const byte data ){
   Wire.beginTransmission (port);
   Wire.write (reg);
@@ -84,11 +98,65 @@ void myISR() {
   shutter_led_counter++;
 }
 
+CmdMessenger cmdMessenger = CmdMessenger(Serial);
+enum cam_ctrl
+{
+    KCommandList      , // Command to request list of available commands
+    KTakepic          , // Command to request cams to take a pic_count
+    KPower_up         , // Command to request cams to power up
+    KPower_down       , // Command to request cams to power down
+  };
+
+void attachCommandCallbacks()
+{
+  // Attach callback methods
+
+  cmdMessenger.attach(KCommandList, OnCommandList);
+  cmdMessenger.attach(KTakepic, OnTake_picture);
+  cmdMessenger.attach(KPower_up, OnPower_up_Yi);
+  cmdMessenger.attach(KPower_down, power_down_Yi);
+}
+
+
+void OnCommandList()
+{
+  ShowCommands();
+}
+
+void ShowCommands()
+{
+  Serial.println("Available commands");
+  Serial.println("TODO");
+}
+
+void OnTake_picture()
+{
+  int value1 = cmdMessenger.readBinArg<int>();
+  long truc=take_picture(value1);
+  /* Send result back */
+  cmdMessenger.sendBinCmd(KTakepic, truc);
+}
+
+void OnPower_up_Yi()
+{
+  int value1 = cmdMessenger.readBinArg<int>();
+  power_up_Yi(value1);
+  /* Send result back */
+  //cmdMessenger.sendCmd(KTakepic, truc);
+}
+
 void setup() {
   pinMode (ISR_INDICATOR, OUTPUT);  // for testing (ISR indicator)
   pinMode (ONBOARD_LED, OUTPUT);  // for onboard LED
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Starting program");
+
+  // Adds newline to every command
+  cmdMessenger.printLfCr();
+
+  // Attach my application's user-defined callback methods
+  attachCommandCallbacks();
+
   Wire.begin ();
   // Set expander n°1 I/O as output
   expanderWrite(mcp1, IODIRA, 0x00);
@@ -145,7 +213,7 @@ void power_up_Yi(const byte cam_range) {
   //Set expander n°1 GPIOA to HIGH
   expanderWrite(mcp1, GPIOA, cam_range);
 
-  delay(500);
+  delay(600);
   //Set expander n°1 GPIOA to LOW
   expanderWrite(mcp1, GPIOA, 0b00000000);
 
@@ -219,7 +287,7 @@ void handle_Sht_led_activity ()
 }  // end of handle_Sht_led_activity
 
 //Take a picture
-long take_picture(const byte cam_range) {
+unsigned long take_picture(const byte cam_range) {
   Serial.println("Taking picture...");
   long pic_start_time = millis();
   byte shutter_led_check = 0b00000000;
@@ -249,13 +317,13 @@ long take_picture(const byte cam_range) {
         }
       }
     if (millis()-pic_start_time > 2500) {
-      Serial.println("No response");
+      //Serial.println("No response");
       return 0;
     }
   }
-  Serial.println("Shutter leds detected");
+  //Serial.println("Shutter leds detected");
 
-  Serial.println("Pause");
+  //Serial.println("Pause");
   unsigned long delay_Start_Time = millis();
   // Wait for the cams to be ready, and check interrupt in case of a failure
   while (millis() < (delay_Start_Time + after_pic_delay)) {
@@ -274,7 +342,7 @@ long take_picture(const byte cam_range) {
     }
 
     }
-  Serial.println("End of pause");
+  //Serial.println("End of pause");
   return pic_start_time;
 }
 
@@ -307,7 +375,11 @@ void timelapse(const byte cam_range) {
   }
 }
 
+
 void loop() {
+
+  // Process incoming serial data, and perform callbacks
+  cmdMessenger.feedinSerialData();
 
   if (digitalRead(powerup_button_pin) == LOW) {
     power_up_Yi(cam_range);
