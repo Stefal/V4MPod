@@ -3,7 +3,7 @@ Première version du programme de controle des Yi
 */
 #include <Arduino.h>
 #include <Wire.h>
-#include <Adafruit_MAX31855.h>
+//#include <Adafruit_MAX31855.h>
 #include <CmdMessenger.h>
 #include <SPI.h>
 
@@ -18,7 +18,7 @@ const int shutter_led_pin = 3;
 const int shutter_button_pin = 9;
 
 int pic_count = 0; // picture counter
-int after_pic_delay = 800;
+int after_pic_delay = 600;
 volatile int shutter_led_counter = 0;
 long old_timestamp = 0;
 long current_timestamp = 0;
@@ -63,14 +63,16 @@ void attachCommandCallbacks(void);
 void OnCommandList(void);
 void power_up_Yi(const byte cam_range);
 void power_down_Yi(const byte cam_range);
-unsigned long take_picture(const byte cam_range);
+byte take_picture(const byte cam_range);
+void wait_time(const byte cam_range);
 void ShowCommands(void);
 void OnTake_picture(void);
 void OnPower_up_Yi(void);
-
-
+void OnPower_down_Yi(void);
+void OnWake_up(void);
 
 // End of Function prototypes
+
 void expanderWrite (const byte port, const byte reg, const byte data ){
   Wire.beginTransmission (port);
   Wire.write (reg);
@@ -94,17 +96,15 @@ void mcp2_interrupt ()
   sht_led_activity = true;   // set flag so main loop knows
 }  // end of mcp2_interrupt
 
-void myISR() {
-  shutter_led_counter++;
-}
 
 CmdMessenger cmdMessenger = CmdMessenger(Serial);
-enum cam_ctrl
+enum
 {
     KCommandList      , // Command to request list of available commands
     KTakepic          , // Command to request cams to take a pic_count
     KPower_up         , // Command to request cams to power up
     KPower_down       , // Command to request cams to power down
+    KWake_up          ,
   };
 
 void attachCommandCallbacks()
@@ -114,9 +114,9 @@ void attachCommandCallbacks()
   cmdMessenger.attach(KCommandList, OnCommandList);
   cmdMessenger.attach(KTakepic, OnTake_picture);
   cmdMessenger.attach(KPower_up, OnPower_up_Yi);
-  cmdMessenger.attach(KPower_down, power_down_Yi);
+  cmdMessenger.attach(KPower_down, OnPower_down_Yi);
+  cmdMessenger.attach(KWake_up, OnWake_up);
 }
-
 
 void OnCommandList()
 {
@@ -131,25 +131,49 @@ void ShowCommands()
 
 void OnTake_picture()
 {
-  int value1 = cmdMessenger.readBinArg<int>();
-  long truc=take_picture(value1);
+  byte cams = cmdMessenger.readBinArg<byte>();
+  unsigned int pic_nbr = cmdMessenger.readBinArg<unsigned int>();
+  long start_time = millis();
+  byte cams_return=take_picture(cams);
+  long shutter_time = millis() - start_time;
   /* Send result back */
-  cmdMessenger.sendBinCmd(KTakepic, truc);
+  cmdMessenger.sendCmdStart(KTakepic);
+  cmdMessenger.sendCmdBinArg(cams_return);
+  cmdMessenger.sendCmdBinArg(shutter_time);
+  cmdMessenger.sendCmdBinArg(pic_nbr);
+  cmdMessenger.sendCmdEnd();
+  wait_time(cams);
+
 }
 
 void OnPower_up_Yi()
 {
   int value1 = cmdMessenger.readBinArg<int>();
   power_up_Yi(value1);
-  /* Send result back */
-  //cmdMessenger.sendCmd(KTakepic, truc);
+  //TODO send result back
+}
+
+void OnPower_down_Yi()
+{
+  int value1 = cmdMessenger.readBinArg<int>();
+  power_down_Yi(value1);
+  //TODO send result back
+
+}
+
+void OnWake_up()
+{
+  expanderWrite(mcp1, GPIOB, 0b11111111);
+  delay(50);
+  //Set expander n°1 GPIOB to LOW to "release" the shutter button
+  expanderWrite(mcp1, GPIOB, 0b00000000);
 }
 
 void setup() {
   pinMode (ISR_INDICATOR, OUTPUT);  // for testing (ISR indicator)
   pinMode (ONBOARD_LED, OUTPUT);  // for onboard LED
   Serial.begin(115200);
-  Serial.println("Starting program");
+  //Serial.println("Starting program");
 
   // Adds newline to every command
   cmdMessenger.printLfCr();
@@ -186,6 +210,7 @@ void setup() {
   // no interrupt yet
   sht_led_activity = false;
 
+  //TODO tranform this as a function to clear interrupts when needed (after power power up, power down)
   // read from interrupt capture ports to clear them
   expanderRead (mcp2, INTCAPA);
   expanderRead (mcp2, INTCAPB);
@@ -287,26 +312,27 @@ void handle_Sht_led_activity ()
 }  // end of handle_Sht_led_activity
 
 //Take a picture
-unsigned long take_picture(const byte cam_range) {
-  Serial.println("Taking picture...");
-  long pic_start_time = millis();
+byte take_picture(const byte cam_range) {
+  //Serial.println("Taking picture...");
   byte shutter_led_check = 0b00000000;
   memset(sht_LedToggle_array,0,sizeof(sht_LedToggle_array
   )); //Reset the array
 
+  long pic_start_time = millis();
   //Set expander n°1 GPIOB to HIGH to "press" the shutter button
   expanderWrite(mcp1, GPIOB, cam_range);
   delay(100);
   //Set expander n°1 GPIOB to LOW to "release" the shutter button
   expanderWrite(mcp1, GPIOB, 0b00000000);
 
-  while (shutter_led_check != cam_range) { // Wait for the shutter led return
+  // Wait for the shutter led return for each enabled camera
+  while (shutter_led_check != cam_range) {
     if (sht_led_activity) {
       handle_Sht_led_activity();
 
       for (byte sht_Led = 0; sht_Led < 8; sht_Led++)
       {
-        if ((sht_LedToggle_array[sht_Led] == 1) & (cam_range & (1 << sht_Led)))
+        if ((sht_LedToggle_array[sht_Led] == 1) && (cam_range & (1 << sht_Led)))
           {
           shutter_led_check = shutter_led_check | (1 << sht_Led);
           /*Serial.print("1 << sht_Led : ");
@@ -318,14 +344,15 @@ unsigned long take_picture(const byte cam_range) {
       }
     if (millis()-pic_start_time > 2500) {
       //Serial.println("No response");
-      return 0;
+      //return 0;
+      return shutter_led_check;
     }
   }
   //Serial.println("Shutter leds detected");
-
   //Serial.println("Pause");
-  unsigned long delay_Start_Time = millis();
+  /*TODO Move this test outside this function
   // Wait for the cams to be ready, and check interrupt in case of a failure
+  unsigned long delay_Start_Time = millis();
   while (millis() < (delay_Start_Time + after_pic_delay)) {
     if (sht_led_activity) {
       handle_Sht_led_activity();
@@ -342,10 +369,32 @@ unsigned long take_picture(const byte cam_range) {
     }
 
     }
+
   //Serial.println("End of pause");
-  return pic_start_time;
+  */
+  return shutter_led_check;
 }
 
+void wait_time(const byte cam_range)
+{
+  // Wait for the cams to be ready, and check interrupt in case of a failure
+  unsigned long delay_Start_Time = millis();
+  while (millis() < (delay_Start_Time + after_pic_delay)) {
+    if (sht_led_activity) {
+      handle_Sht_led_activity();
+      for (byte sht_Led = 0; sht_Led < 8; sht_Led++)
+      {
+        if ((sht_LedToggle_array[sht_Led] > 1) & (cam_range & (1 << sht_Led)))
+        {
+          Serial.print("Error on cam n°");
+          Serial.println(sht_Led);
+          //return -1;
+        }
+      }
+    }
+  }
+
+}
 
 void timelapse(const byte cam_range) {
   Serial.println("Starting timelapse");
@@ -391,6 +440,7 @@ void loop() {
 
   if (digitalRead(shutter_button_pin) == LOW) {
     Serial.println(take_picture(cam_range));
+    wait_time(cam_range);
   }
 
   if (digitalRead(tmlapse_start_pin) == LOW) {
