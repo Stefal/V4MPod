@@ -22,7 +22,7 @@ int after_pic_delay = 600;
 volatile int shutter_led_counter = 0;
 long old_timestamp = 0;
 long current_timestamp = 0;
-const byte cam_range = 0b00000001;
+const byte cam_range = 0b00011111;
 
 // MCP23017 registers (everything except direction defaults to 0)
 
@@ -343,8 +343,8 @@ byte take_picture(const byte cam_range) {
         }
       }
     if (millis()-pic_start_time > 2500) {
-      //Serial.println("No response");
-      //return 0;
+      Serial.println("No response");
+      return 0;
       return shutter_led_check;
     }
   }
@@ -372,12 +372,14 @@ byte take_picture(const byte cam_range) {
 
   //Serial.println("End of pause");
   */
+
   return shutter_led_check;
 }
 
 void wait_time(const byte cam_range)
 {
   // Wait for the cams to be ready, and check interrupt in case of a failure
+  Serial.println("we are in wait_time");
   unsigned long delay_Start_Time = millis();
   while (millis() < (delay_Start_Time + after_pic_delay)) {
     if (sht_led_activity) {
