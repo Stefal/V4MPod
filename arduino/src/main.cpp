@@ -1,6 +1,8 @@
 /*
 Première version du programme de controle des Yi
 */
+//TODO La caméra rev B ne fonctionne pas sur la sortie 3
+//TODO A vérifier
 #include <Arduino.h>
 #include <Wire.h>
 //#include <Adafruit_MAX31855.h>
@@ -13,7 +15,6 @@ const int powerup_button_pin = 5;
 const int powerdown_button_pin = 6;
 const int tmlapse_start_pin = 7;
 const int tmlapse_stop_pin = 8;
-//const int shutter_led_pin = A0;
 const int shutter_led_pin = 3;
 const int shutter_button_pin = 9;
 
@@ -22,7 +23,7 @@ int after_pic_delay = 600;
 volatile int shutter_led_counter = 0;
 long old_timestamp = 0;
 long current_timestamp = 0;
-const byte cam_range = 0b00011111;
+byte cam_range = 0b00001111;
 
 // MCP23017 registers (everything except direction defaults to 0)
 
@@ -143,7 +144,7 @@ void OnTake_picture()
   cmdMessenger.sendCmdBinArg(shutter_time);
   cmdMessenger.sendCmdBinArg(pic_nbr);
   cmdMessenger.sendCmdEnd();
-  wait_time(cams);
+  //wait_time(cams);
 
 }
 
@@ -186,11 +187,11 @@ void setup() {
   // Attach my application's user-defined callback methods
   attachCommandCallbacks();
 
+
   Wire.begin ();
   // Set expander n°1 I/O as output
   expanderWrite(mcp1, IODIRA, 0x00);
   expanderWrite(mcp1, IODIRB, 0x00);
-
   // Set expander n°2 I/O as output. We will set inputs later
   expanderWrite(mcp2, IODIRA, 0x00);
   expanderWrite(mcp2, IODIRB, 0x00);
@@ -214,10 +215,8 @@ void setup() {
   // FIN MES TESTS
   // no interrupt yet
   sht_led_activity = false;
-
   // pin 19 of MCP23017 is plugged into D2 of the Arduino which is interrupt 0
   attachInterrupt(0, mcp2_interrupt, RISING);
-  //attachInterrupt(digitalPinToInterrupt(shutter_led_pin), mcp2_interrupt, CHANGE);
 
   // pinMode(shutter_pin, OUTPUT);
   // pinMode(power_pin, OUTPUT);
@@ -226,12 +225,13 @@ void setup() {
   pinMode(tmlapse_start_pin, INPUT_PULLUP);
   pinMode(tmlapse_stop_pin, INPUT_PULLUP);
   pinMode(shutter_button_pin, INPUT_PULLUP);
-  pinMode(shutter_led_pin, INPUT);
+  pinMode(shutter_led_pin, OUTPUT);
   //pinMode(A5, INPUT);
   //attachInterrupt(digitalPinToInterrupt(shutter_led_pin), myISR, RISING);
 
   // Clear Mcp2 interrupt
   Clear_mcp2_Interrupt();
+
 
 }
 
@@ -250,7 +250,7 @@ byte power_up_Yi(const byte cam_range) {
 }
 
 void power_down_Yi(const byte cam_range) {
-  Serial.println("Shutting down the Yi");
+  //Serial.println("Shutting down the Yi");
   //Set expander n°1 GPIOA to HIGH
   expanderWrite(mcp1, GPIOA, cam_range);
 
@@ -263,7 +263,6 @@ void handle_Sht_led_activity ()
 {
   unsigned int sht_LedValue = 0;
   unsigned int sht_LedLastValue = 0;
-  //Serial.println("Inside handle_Sht_led_activity function");
   sht_led_activity = false;  // ready for next time through the interrupt service routine
   digitalWrite (ISR_INDICATOR, LOW);  // debugging
 
@@ -273,6 +272,8 @@ void handle_Sht_led_activity ()
     {
 
     sht_LedValue |= expanderRead (mcp2, INTCAPA);        // port B is in low-order byte
+    //Serial.print("sht_LedValue : ");
+    //Serial.println(sht_LedValue, BIN);
     }
 
     /*Serial.print("sht_LedValue : ");
@@ -302,7 +303,8 @@ void handle_Sht_led_activity ()
       }
 
     }
-  sht_LedLastValue = sht_LedValue;
+  sht_LedLastValue = sht_LedValue; /*TODO Vérifier que ça fonctionne car sht_LedLastValue
+  est reseté au redémarrage de la fonction*/
 
   // if a switch is now pressed, turn LED on  (key down event)
   if (sht_LedValue)
@@ -315,6 +317,7 @@ void handle_Sht_led_activity ()
 
 //Take a picture
 byte take_picture(const byte cam_range) {
+  digitalWrite(shutter_led_pin, HIGH);
   //Serial.println("Taking picture...");
   byte shutter_led_check = 0b00000000;
   memset(sht_LedToggle_array,0,sizeof(sht_LedToggle_array
@@ -328,9 +331,16 @@ byte take_picture(const byte cam_range) {
   expanderWrite(mcp1, GPIOB, 0b00000000);
 
   // Wait for the shutter led return for each enabled camera
-  while ((shutter_led_check != cam_range) || ((millis() - pic_start_time) < 3000)) {
+  while ((shutter_led_check != cam_range) && ((millis() - pic_start_time) < 3000)) {
+
     if (sht_led_activity) {
       handle_Sht_led_activity();
+      /*Serial.print("sht_LedToggle_array : ");
+      for(int i = 7; i >= 0; i--)
+      {
+        Serial.print(sht_LedToggle_array[i]);
+      }
+      Serial.println(" ");*/
       for (byte sht_Led = 0; sht_Led < 8; sht_Led++)
       {
         if ((sht_LedToggle_array[sht_Led] == 1) && (cam_range & (1 << sht_Led)))
@@ -339,7 +349,10 @@ byte take_picture(const byte cam_range) {
           /*Serial.print("1 << sht_Led : ");
           Serial.println(1 << sht_Led, BIN);
           Serial.print("shutter_led_check : ");
-          Serial.println(shutter_led_check, BIN);*/
+          Serial.println(shutter_led_check, BIN);
+          Serial.print("cam_range : ");
+          Serial.println(cam_range, BIN);*/
+
           }
         }
       }
@@ -348,7 +361,8 @@ byte take_picture(const byte cam_range) {
 
 
 
-
+  //Serial.println("existing take_pic function");
+  digitalWrite(shutter_led_pin, LOW);
   return shutter_led_check;
 }
 
@@ -364,8 +378,8 @@ void wait_time(const byte cam_range)
       {
         if ((sht_LedToggle_array[sht_Led] > 1) & (cam_range & (1 << sht_Led)))
         {
-          Serial.print("Error on cam n°");
-          Serial.println(sht_Led);
+          //Serial.print("Error on cam n°");
+          //Serial.println(sht_Led);
           //return -1;
         }
       }
@@ -418,7 +432,7 @@ void loop() {
 
   if (digitalRead(shutter_button_pin) == LOW) {
     Serial.println(take_picture(cam_range));
-    wait_time(cam_range);
+    //wait_time(cam_range);
   }
 
   if (digitalRead(tmlapse_start_pin) == LOW) {
