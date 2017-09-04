@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name empreinte)(type KiCad)(uri "$(KIPRJMOD)/empreinte.pretty")(options "")(descr ""))
+)
