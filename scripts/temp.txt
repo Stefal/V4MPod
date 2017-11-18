@@ -1,0 +1,40 @@
+"""
+def arg_parse():
+    """ Parse the command line you use to launch the script """
+    parser = argparse.ArgumentParser(description="Batch process",
+                                     version="0.01")
+    parser.add_argument("path", nargs="?", help="Path. Without this parameter, "
+                                                "the script will use the current directory as the destination", default=os.getcwd())"
+    parser.add_argument("-c", "--type", help="command to run", default=None)
+    parser.add_argument("-v", "--var", help="variable", default=None)
+    args = parser.parse_args()
+    print(args)
+    return args
+
+IOError("Bad input parameters")
+try:
+    path = sys.argv[1]
+except:
+    path = os.getcwd()
+    print("No path given, the script will use the current one: {}".format(path))
+
+os.chdir(path)
+folder_list = glob.glob("*/")
+#jpg_list = glob.glob("*.csv")
+
+"""
+python geotag_from_gpx.py "e:\gare saint-lazare\cam_droite"
+"e:\gare saint-lazare\trace-saint-lazare.gpx"
+--time-offset 3600 --bearing-offset 90
+"""
+for path in folder_list:
+    if "avant" in path.lower():
+        print("ma commande pour les photos avant")
+    elif "droite" in path.lower():
+        print("ma commande pour les photo droite")
+    elif "arriere" in path.lower():
+        print("ma commande pour les photo arriere")
+    elif "gauche" in path.lower():
+        print("ma commande pour les photo gauche")
+
+"""
