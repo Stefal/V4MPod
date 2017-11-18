@@ -91,7 +91,7 @@ def check_pic_count(log, image_list):
     Count pic's number in the log, and count the real number of pics taken for each cam
     :param log: list of the logs stored in the raspberry Pi
     :param image_list: A list in list of Picture_infos namedtuple
-    :return: list containing the results
+    :return: list containing the results (cam1 pic count from log, cam1 pic, cam2 pic count from log.... )
     """
     pic_count = []
     print("pictures in the log vs pictures taken :")
@@ -142,6 +142,11 @@ def filter_images(piclists):
 
 
 def correlate_nearest_time(loglist, piclist):
+    """Try to find the right image for each log's timestamp.
+    Find the closest image for each timestamp in the log.
+    :param loglist: a list of log_infos nametuple
+    :param piclist: a list of Picture_infos namedtuple"""
+
     # calcule le delta moyen log-pic sur les premiers 1% des photos
     delta_list = []
     try:
@@ -204,6 +209,16 @@ def correlate_nearest_time(loglist, piclist):
 
 
 def correlate_double_diff_forward(loglist, piclist, pic_count_diff, cam_number):
+    """Try to find the right image for each log's timestamp.
+    Compute timedelta (from the beginning) between x+1 and x log's timestamp, timedelta between x+1 and x pic timestamp,
+    and compute the timedelta between y pic timedelta and y log timedelta.
+    The longest double difference timedelta will be used for the missing images.
+    Then the timestamps from the log are copied to the images.
+    :param loglist: a list of log_infos nametuple
+    :param piclist: a list of Picture_infos namedtuple
+    :param pic_count_diff: how many images are missing
+    :param cam_number: cam's number"""
+
     # On va calculer le delta entre chaque déclenchement du log, et entre les photos
     # Calcul du delta entre les logs
     log_pic_delta = []
@@ -292,6 +307,16 @@ def correlate_double_diff_forward(loglist, piclist, pic_count_diff, cam_number):
 
 
 def correlate_double_diff_backward(loglist, piclist, pic_count_diff, cam_number):
+    """Try to find the right image for each log's timestamp.
+    Compute timedelta (from the end) between x+1 and x log's timestamp, timedelta between x+1 and x pic timestamp,
+    and compute the timedelta between y pic timedelta and y log timedelta.
+    The longest double difference timedelta will be used for the missing images.
+    Then the timestamps from the log are copied to the images.
+    :param loglist: a list of log_infos nametuple
+    :param piclist: a list of Picture_infos namedtuple
+    :param pic_count_diff: how many images are missing
+    :param cam_number: cam's number"""
+
     # On va calculer le delta entre chaque déclenchement du log, et entre les photos
     # Calcul du delta entre les logs
     log_pic_delta = []
@@ -382,6 +407,11 @@ def correlate_double_diff_backward(loglist, piclist, pic_count_diff, cam_number)
 
 
 def insert_missing_timestamp(loglist, piclists, cam):
+    """Insert missing timestamp in the piclists, when the log indicate that the cam didn't answer to the shutter request
+    :param loglist: a list of log_infos nametuple
+    :param piclist: a list of Picture_infos namedtuple
+    :param cam: cam's number
+    """
     # On insert les timestamps qu'on sait manquants (caméra qui n'ont pas répondu, donc 0 dans le log).
     # Cela évite de fausser les calculs des différences de temps entre chaque images
     new_piclists = []
@@ -407,6 +437,11 @@ def insert_missing_timestamp(loglist, piclists, cam):
 
 
 def correlate_log_and_pic(loglist, image_list, pic_count):
+    """Correlate the images timestamp with the log timestamps
+    :param loglist: a list of log_infos nametuple
+    :param image_list: a list of of list of Picture_infos namedtuple
+    :param pic_count: log and cam pic count
+    """
     piclists_corrected = []
     for cam in range(cam_count):
 
@@ -459,7 +494,7 @@ def correlate_log_and_pic(loglist, image_list, pic_count):
                 # TODO coder un while pour le cas d'une mauvaise réponse
 
         elif pic_count_diff < 0:
-            print("BORDEL PAS ENCORE CODE !!")
+            print("BORDEL !! PAS ENCORE FAIT !!")
 
     return piclists_corrected
 

@@ -73,7 +73,7 @@ def list_jpg(directory, camid=None):
     """ Search for all the jpg found in a folder and all the subfolders
 
 	Return a list of list containing the camid, the complete path of the
-	picture (string), and his DatetimeOriginal (datetime object from the Exif header)
+	picture (string), and its DatetimeOriginal (datetime object from the Exif header)
 	[['camid', '/mypath/mydirectory/mypicture.jpg', 'datetime.datetime']]
 	"""
 
