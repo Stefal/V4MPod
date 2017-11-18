@@ -145,7 +145,9 @@ def correlate_nearest_time(loglist, piclist):
     """Try to find the right image for each log's timestamp.
     Find the closest image for each timestamp in the log.
     :param loglist: a list of log_infos nametuple
-    :param piclist: a list of Picture_infos namedtuple"""
+    :param piclist: a list of Picture_infos namedtuple
+    :return: a list of New_Picture_infos namedtuple, the standard deviation between log's timestamp
+    and image's timestamp"""
 
     # calcule le delta moyen log-pic sur les premiers 1% des photos
     delta_list = []
@@ -217,7 +219,9 @@ def correlate_double_diff_forward(loglist, piclist, pic_count_diff, cam_number):
     :param loglist: a list of log_infos nametuple
     :param piclist: a list of Picture_infos namedtuple
     :param pic_count_diff: how many images are missing
-    :param cam_number: cam's number"""
+    :param cam_number: cam's number
+    :return: a list of New_Picture_infos namedtuple, the standard deviation between log's timestamp
+    and image's timestamp"""
 
     # On va calculer le delta entre chaque déclenchement du log, et entre les photos
     # Calcul du delta entre les logs
@@ -315,7 +319,9 @@ def correlate_double_diff_backward(loglist, piclist, pic_count_diff, cam_number)
     :param loglist: a list of log_infos nametuple
     :param piclist: a list of Picture_infos namedtuple
     :param pic_count_diff: how many images are missing
-    :param cam_number: cam's number"""
+    :param cam_number: cam's number
+    :return: a list of New_Picture_infos namedtuple, the standard deviation between log's timestamp
+    and image's timestamp"""
 
     # On va calculer le delta entre chaque déclenchement du log, et entre les photos
     # Calcul du delta entre les logs
@@ -411,6 +417,7 @@ def insert_missing_timestamp(loglist, piclists, cam):
     :param loglist: a list of log_infos nametuple
     :param piclist: a list of Picture_infos namedtuple
     :param cam: cam's number
+    :return: the list of Picture_infos namedtuple with the missing timestamp inserted
     """
     # On insert les timestamps qu'on sait manquants (caméra qui n'ont pas répondu, donc 0 dans le log).
     # Cela évite de fausser les calculs des différences de temps entre chaque images
@@ -441,6 +448,7 @@ def correlate_log_and_pic(loglist, image_list, pic_count):
     :param loglist: a list of log_infos nametuple
     :param image_list: a list of of list of Picture_infos namedtuple
     :param pic_count: log and cam pic count
+    :return: a new list of list of New_Picture_infos namedtuple
     """
     piclists_corrected = []
     for cam in range(cam_count):
@@ -499,7 +507,6 @@ def correlate_log_and_pic(loglist, image_list, pic_count):
     return piclists_corrected
 
 
-# log_infos = namedtuple('log_infos', ['log_timestamp', 'action', 'return_timestamp', 'time_to_answer', 'cam_return', 'pic_number', ])
 def compute_delta(mylist):
     delta = []
     for i, timestamp in enumerate(mylist[:-1]):
