@@ -6,7 +6,6 @@ from __future__ import print_function
 import os, sys, datetime, time, argparse
 import xml.etree.ElementTree as ET
 
-sys.path.insert(0, "d:\\mapillary\\python")
 from dateutil.tz import tzlocal
 from lib.geo import interpolate_lat_lon, decimal_to_dms
 from lib.gps_parser import get_lat_lon_time_from_gpx, get_lat_lon_time_from_nmea
