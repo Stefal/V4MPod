@@ -29,7 +29,7 @@ def list_images(directory):
             #print type(t)
             #s = metadata["Exif.Photo.SubSecTimeOriginal"].value
             files.append((filepath, t))
-        except KeyError, e:
+        except KeyError as e:
             # if any of the required tags are not set the image is not added to the list
             print("Skipping {0}: {1}".format(filename, e))
     
@@ -45,7 +45,7 @@ def big_pic_delta(image_list, delta, file_destination): #check if path is ok
         new_datetimeoriginal= new_fulltime.replace(microsecond=0)
         new_subsectimeoriginal="%.6d"%(new_fulltime.microsecond)
         image_with_new_timestamp_list.append((image[0],new_datetimeoriginal, new_subsectimeoriginal))
-        print image[1], 'new time is', new_datetimeoriginal, 'subsec is', new_subsectimeoriginal
+        print (image[1], 'new time is', new_datetimeoriginal, 'subsec is', new_subsectimeoriginal)
     #print(image_with_new_timestamp_list)
     #print('type de', image_with_new_timestamp_list[0][2], " est ", type(image_with_new_timestamp_list[0][2]))
 
@@ -74,7 +74,7 @@ def interpolate_timestamp(image_list, delta):
         new_datetimeoriginal= new_fulltime.replace(microsecond=0)
         new_subsectimeoriginal="%.6d"%(new_fulltime.microsecond)
         image_with_new_timestamp_list.append((image[0],new_datetimeoriginal, new_subsectimeoriginal))
-        print image[1], 'new time is', new_datetimeoriginal, 'subsec is', new_subsectimeoriginal
+        print (image[1], 'new time is', new_datetimeoriginal, 'subsec is', new_subsectimeoriginal)
     #print(image_with_new_timestamp_list)
     #print('type de', image_with_new_timestamp_list[0][2], " est ", type(image_with_new_timestamp_list[0][2]))
 
