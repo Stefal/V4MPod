@@ -205,7 +205,7 @@ def correlate_nearest_time(loglist, piclist):
             gap += 1
 
     # piclist_corrected = [i for i in piclist_corrected if (type(i) == New_Picture_infos and type(i.path) != None) or type(i) == bool]
-    deviation = ecart_type(compute_delta3(loglist, piclist_corrected))
+    deviation = standard_deviation(compute_delta3(loglist, piclist_corrected))
     # print("standard deviation : ", deviation)
     return piclist_corrected, deviation
 
@@ -305,7 +305,7 @@ def correlate_double_diff_forward(loglist, piclist, pic_count_diff, cam_number):
         elif type(piclist[i]) == bool:
             piclist_corrected.append(piclist[i])
     # print("piclist_corrected : ", piclist_corrected)
-    deviation = ecart_type(compute_delta3(loglist, piclist_corrected))
+    deviation = standard_deviation(compute_delta3(loglist, piclist_corrected))
 
     return piclist_corrected, deviation
 
@@ -407,7 +407,7 @@ def correlate_double_diff_backward(loglist, piclist, pic_count_diff, cam_number)
         elif type(piclist[i]) == bool:
             piclist_corrected.append(piclist[i])
 
-    deviation = ecart_type(compute_delta3(loglist, piclist_corrected))
+    deviation = standard_deviation(compute_delta3(loglist, piclist_corrected))
     # print("standard deviation : ", deviation)
     return piclist_corrected, deviation
 
@@ -455,7 +455,7 @@ def correlate_log_and_pic(loglist, image_list, pic_count):
 
         single_cam_image_list = insert_missing_timestamp(loglist, image_list, cam)
         pic_count_diff = pic_count[cam * 2] - pic_count[cam * 2 + 1]
-        original_deviation = ecart_type(compute_delta3(loglist, single_cam_image_list))
+        original_deviation = standard_deviation(compute_delta3(loglist, single_cam_image_list))
 
         if pic_count_diff == 0:
             print("Camera {0} : Exact correlation between logfile and pictures".format(cam + 1))
@@ -470,7 +470,7 @@ def correlate_log_and_pic(loglist, image_list, pic_count):
                                                                  new_datetimeoriginal, new_subsectimeoriginal, "", "",
                                                                  "", "")
 
-            deviation = ecart_type(compute_delta3(loglist, image_list[cam]))
+            deviation = standard_deviation(compute_delta3(loglist, image_list[cam]))
             print("standard deviation after correction: ", deviation)
 
             piclists_corrected.append(single_cam_image_list)
@@ -543,15 +543,15 @@ def compute_delta3(loglist1, piclist2):
     return delta
 
 
-def ecart_type(list1):
+def standard_deviation(list1):
     # moyenne
     moy = sum(list1, 0.0) / len(list1)
     # variance
     variance = [(x - moy) ** 2 for x in list1]
     variance = sum(variance, 0.0) / len(variance)
     # ecart_type
-    ecart = variance ** 0.5
-    return ecart
+    deviation = variance ** 0.5
+    return deviation
 
 
 def parse_log(path_to_logfile):
