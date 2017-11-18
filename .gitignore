@@ -188,7 +188,7 @@ $RECYCLE.BIN/
 ## Python
 #############
 
-#*.py[cod]
+*.py[cod]
 
 # Packages
 *.egg
