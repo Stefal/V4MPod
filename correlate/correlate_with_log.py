@@ -866,54 +866,74 @@ def find_directory(working_dir, strings_to_find):
 
 
 if __name__ == '__main__':
-
+    # Parsing the command line arguments
     args = arg_parse()
+
+    # Trying to find the logfile in the working directory if none is given in the command line
     if args.logfile is None:
         print("=" * 30)
         args.logfile = find_file(args.source, "log")
         # TODO raise an exception if find_file return none
+
+    # Trying to find a nmea file in the working directory if none is given in the command line
     if args.gpxfile is None:
         print("=" * 30)
         args.gpxfile = find_file(args.source, "nmea")
+    # Or a gpx file if there is no nmea file
     if args.gpxfile is None:
         args.gpxfile = find_file(args.source, "gpx")
     # TODO raise an exception if args.gpxfile is None
 
+    #Parsing the multicam profile
     folder_string, cam_names, cam_bearings, distances_from_center, min_pic_distance = config_parse(args.profile)
 
+    # Trying to find the folders containing the pictures
     path_to_pics = find_directory(args.source, folder_string)
-    image_list = []
 
+    # Searching for all the jpeg images
+    image_list = []
     print("=" * 80)
     print("Searching for jpeg images in ... ")
     for path in path_to_pics:
         print(path)
         image_list.append(list_images(path))
 
+    # Counting how many cameras are used
     cam_count = len(image_list)
+
+    # Parsing the logfile
     loglist = parse_log(args.logfile)
 
+    # Counting the shutter requests stored in the logfile, and compare with the images count.
     print("=" * 80)
-    pic_count = check_pic_count(loglist, image_list)
+        pic_count = check_pic_count(loglist, image_list)
 
     #   for cam in range(cam_count):
     #      image_list[cam] = insert_missing_timestamp(loglist, image_list, cam)
 
+    # Trying to correlate the shutter's timestamps with the images timestamps.
     piclists_corrected = correlate_log_and_pic(loglist, image_list, pic_count)
+    # Remove the unuseful value in the lists
     piclists_corrected = filter_images(piclists_corrected)
+
+    # Geotag the pictures, add the direction, and offset them from the location
     print("=" * 80)
     geotag_from_gpx(piclists_corrected, args.gpxfile, args.time_offset, cam_bearings, distances_from_center)
     print("=" * 80)
+
+    # Write a josm session file to check the picture's location before writing the new exif data
     if args.josm:
         session_file_path = os.path.abspath(os.path.join(args.source, "session.jos"))
         write_josm_session(piclists_corrected, session_file_path, cam_names, args.gpxfile)
         open_session_in_josm(session_file_path)
+
+    # Write the new exif data in the pictures.
     print("=" * 80)
     if args.write_exif:
         user_input = raw_input("Write the new exif data in the pictures? (y or n) : ")
         if user_input == "y":
             write_metadata(piclists_corrected)
-
+    # Move the duplicate pictures to the excluded folder
     if args.exclude_close_pic:
         print("Moving pictures too close to each other")
         move_too_close_pic(piclists_corrected, min_pic_distance)
