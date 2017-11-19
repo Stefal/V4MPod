@@ -443,11 +443,14 @@ def insert_missing_timestamp(loglist, piclists, cam):
 
 
 def correlate_log_and_pic(loglist, image_list, pic_count):
-    """Correlate the images timestamp with the log timestamps
+    """Correlate the images timestamp with the log timestamps.
+    If there are more log's timestamps than pic'count, 3 different algorithms will try to find
+    which timestamp has no image related to the it.
+
     :param loglist: a list of log_infos nametuple
     :param image_list: a list of of list of Picture_infos namedtuple
     :param pic_count: log and cam pic count
-    :return: a new list of list of New_Picture_infos namedtuple
+    :return: a new list of list of New_Picture_infos namedtuple with the more accurate timestamps.
     """
     piclists_corrected = []
     for cam in range(cam_count):
@@ -584,6 +587,16 @@ def parse_log(path_to_logfile):
 
 
 def geotag_from_gpx(piclists, gpx_file, offset_time=0, offset_bearings=0, offset_distance=0):
+    """This function will try to find the location (lat lon) for each pictures in each list, compute the direction
+    of the pictures with an offset if given, and offset the location with a distance if given. Then, these
+    coordinates will be added in the New_Picture_infos namedtuple.
+    :param piclists: a list of of list of New_Picture_infos namedtuple
+    :param gpx_file: a gpx or nmea file path
+    :param offset_time: time offset between the gpx/nmea file, and the image's timestamp
+    :param offset_bearings: the offset angle to add to the direction of the images (for side camera)
+    :param offset_distance: a distance (in meter) to move the image from the computed location. (Use this setting to
+    not have all the images from a multicam setup at the same exact location
+    :return: nothing, the function update the New_Picture_infos namedtuple inside the lists"""
     now = datetime.datetime.now(tzlocal())
     print("Your local timezone is {0}, if this is not correct, your geotags will be wrong.".format(
         now.strftime('%Y-%m-%d %H:%M:%S %z')))
@@ -624,7 +637,10 @@ def geotag_from_gpx(piclists, gpx_file, offset_time=0, offset_bearings=0, offset
         print("Done geotagging {0} images in {1:.1f} seconds.".format(len(piclist), time.time() - start_time))
 
 def move_too_close_pic(piclists, min_distance):
-    """Move pictures to another folder is they're too close to each other"""
+    """Move pictures to another folder is they're too close to each other. Useful to remove duplicate pictures
+    :param piclists: a list of of list of New_Picture_infos namedtuple
+    :param min_distance: the minimum distance between two pictures. If the distance between pic1 and pic2 is smaller,
+    pic2 will be move to the "excluded" folder"""
     
     def move_pic(full_path_pic):
         """Move the picture"""
@@ -657,8 +673,12 @@ def move_too_close_pic(piclists, min_distance):
 
 def write_josm_session(piclists, session_file_path, cam_names, gpx_file=None):
     """
-    build a josm session file in xml format with all the pictures on separate layer and another
+    Build a josm session file in xml format with all the pictures on separate layer, and another
     layer for the gpx/nmea file
+    :param piclists: a list of of list of New_Picture_infos namedtuple
+    :param session_file_path: the path and name of the session file
+    :param cam_names: The camera's name, which will be the layer's name
+    :param gpx_file: The path of the gpx/nmea file.
     """
 
     root = ET.Element("josm-session")
@@ -730,14 +750,17 @@ def write_josm_session(piclists, session_file_path, cam_names, gpx_file=None):
         return myxml
 
 
-def open_session_in_josm(session_file_path):
+def open_session_in_josm(session_file_path, remote_port=8111):
+    """Send the session file to Josm. "Remote control" and "open local files" must be enable in the Josm settings
+     :param session_file_path: the session file path (.jos)
+     :param remote_port: the port to talk to josm. Default is 8111"""
     import urllib2, posixpath
 
     if os.sep != posixpath.sep:
         session_file_path = session_file_path.replace(os.sep, posixpath.sep)
 
     print("Opening the session in Josm....", end="")
-    r = urllib2.urlopen("http://127.0.0.1:8111/open_file?filename=" + session_file_path)
+    r = urllib2.urlopen("http://127.0.0.1:" + remote_port + "/open_file?filename=" + session_file_path)
     answer = r.read()
     print("Success!") if "OK" in answer else print("Error!")
     r.close()
@@ -779,6 +802,10 @@ def arg_parse():
 
 
 def config_parse(profile_name):
+    """Parse the profile entered with the command line. This profile is in the profile.cfg file.
+    These parameters are used to automate the processing
+    :param profile_name: Profile's name"""
+
     import ConfigParser
     config = ConfigParser.ConfigParser()
     config.read(os.path.dirname(sys.argv[0]) + "\\profile.cfg")
@@ -800,6 +827,10 @@ def config_parse(profile_name):
 
 
 def find_file(directory, file_extension):
+    """Try to find the files with the given extension in a directory
+    :param directory: the directory to look in
+    :param file_extension: the extension (.jpg, .gpx, ...)
+    :return: a list containing the files found in the directory"""
     file_list = []
     for root, sub_folders, files in os.walk(directory):
         file_list += [os.path.join(root, filename) for filename in files if filename.lower().endswith(file_extension)]
@@ -819,6 +850,10 @@ def find_file(directory, file_extension):
 
 
 def find_directory(working_dir, strings_to_find):
+    """Try to find the folders containing a given string in their names
+    :param working_dir: The base folder to search in
+    :param strings_to_find: a list of strings to find in the folder's names
+    :return: a list of folder with the string_to_find in their name"""
     images_path = []
     dir_list = [i for i in os.listdir(working_dir) if os.path.isdir(i)]
     for string in strings_to_find:
