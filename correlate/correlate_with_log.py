@@ -917,8 +917,6 @@ if __name__ == '__main__':
     # Remove the unuseful value in the lists
     piclists_corrected = filter_images(piclists_corrected)
 
-
-
     # Geotag the pictures, add the direction, and offset them from the location
     print("=" * 80)
     geotag_from_gpx(piclists_corrected, args.gpxfile, args.time_offset, cam_bearings, distances_from_center)
@@ -949,7 +947,6 @@ if __name__ == '__main__':
                     open_session_in_josm(session_file_path)
             except ValueError:
                 print("Invalid input")
-
 
     # Write the new exif data in the pictures.
     print("=" * 80)
