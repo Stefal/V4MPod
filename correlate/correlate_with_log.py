@@ -906,7 +906,7 @@ if __name__ == '__main__':
 
     # Counting the shutter requests stored in the logfile, and compare with the images count.
     print("=" * 80)
-        pic_count = check_pic_count(loglist, image_list)
+    pic_count = check_pic_count(loglist, image_list)
 
     #   for cam in range(cam_count):
     #      image_list[cam] = insert_missing_timestamp(loglist, image_list, cam)
