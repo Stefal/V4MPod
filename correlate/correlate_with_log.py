@@ -760,7 +760,7 @@ def open_session_in_josm(session_file_path, remote_port=8111):
         session_file_path = session_file_path.replace(os.sep, posixpath.sep)
 
     print("Opening the session in Josm....", end="")
-    r = urllib2.urlopen("http://127.0.0.1:" + remote_port + "/open_file?filename=" + session_file_path)
+    r = urllib2.urlopen("http://127.0.0.1:" + str(remote_port) + "/open_file?filename=" + session_file_path)
     answer = r.read()
     print("Success!") if "OK" in answer else print("Error!")
     r.close()
