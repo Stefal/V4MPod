@@ -949,7 +949,7 @@ if __name__ == '__main__':
                 print("=" * 80)
                 if args.josm:
                     new_cam_names = [name + " | " + str(input_time_offset) for name in cam_names]
-                    write_josm_session(piclists_corrected, session_file_path, new_cam_names, args.gpxfile)
+                    write_josm_session(piclists_corrected, session_file_path, new_cam_names)
                     open_session_in_josm(session_file_path)
             except ValueError:
                 print("Invalid input")
