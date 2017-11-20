@@ -487,21 +487,27 @@ def correlate_log_and_pic(loglist, image_list, pic_count):
             backward = correlate_double_diff_backward(loglist, single_cam_image_list[:], pic_count_diff, cam)
             nearest = correlate_nearest_time(loglist, single_cam_image_list[:])
             print("Time deviation before correction : ", original_deviation)
-            print("double diff forward deviation: ", forward[1])
-            print("double diff backward deviation: ", backward[1])
-            print("nearest time deviation: ", nearest[1])
+            print("=" * 80)
+            print("1 : double diff forward deviation: ", forward[1])
+            print("2 : double diff backward deviation: ", backward[1])
+            print("3 : nearest time deviation: ", nearest[1])
 
-            user_input = raw_input("Quel algo ? 1, 2 ou 3 ? ")
-            if int(user_input) == 1:
-                piclists_corrected.append(forward[0])
-            elif int(user_input) == 2:
-                piclists_corrected.append(backward[0])
-            elif int(user_input) == 3:
-                piclists_corrected.append(nearest[0])
-            else:
-                print("Invalid choice")
+            user_input = raw_input("The lowest deviation should be the better choice \n"
+                                   "Which algorithm do you want to use ? 1, 2 or 3 ? ")
+            while True:
+                if int(user_input) == 1:
+                    piclists_corrected.append(forward[0])
+                    break
+                elif int(user_input) == 2:
+                    piclists_corrected.append(backward[0])
+                    break
+                elif int(user_input) == 3:
+                    piclists_corrected.append(nearest[0])
+                    break
+                else:
+                    print("Invalid choice")
 
-                # TODO coder un while pour le cas d'une mauvaise réponse
+
 
         elif pic_count_diff < 0:
             print("BORDEL !! PAS ENCORE FAIT !!")
