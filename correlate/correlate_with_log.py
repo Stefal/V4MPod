@@ -760,7 +760,7 @@ def open_session_in_josm(session_file_path, remote_port=8111):
         session_file_path = session_file_path.replace(os.sep, posixpath.sep)
 
     print("Opening the session in Josm....", end="")
-    r = urllib2.urlopen("http://127.0.0.1:" + remote_port + "/open_file?filename=" + session_file_path)
+    r = urllib2.urlopen("http://127.0.0.1:" + str(remote_port) + "/open_file?filename=" + session_file_path)
     answer = r.read()
     print("Success!") if "OK" in answer else print("Error!")
     r.close()
@@ -793,7 +793,7 @@ def arg_parse():
                         help="Time offset between GPX and photos. If your camera is ahead by one minute, time_offset is 60.",
                         default=0, type=float)
     parser.add_argument("-j", "--josm", help="Load the pictures in Josm (must be running)", action="store_true")
-    parser.add_argument("-n", "--no_retag", help="Don't ask if you want to restart the images geotagging", action="store_false")
+    parser.add_argument("-n", "--no_retag", help="Don't ask if you want to restart the images geotagging", action="store_true")
     parser.add_argument("-w", "--write_exif", help="Write the new exif tags in the images", action="store_true")
     parser.add_argument("-x", "--exclude_close_pic", help="Move the too close pictures to the exluded folder", action="store_true")
 
@@ -907,7 +907,7 @@ if __name__ == '__main__':
 
     # Counting the shutter requests stored in the logfile, and compare with the images count.
     print("=" * 80)
-        pic_count = check_pic_count(loglist, image_list)
+    pic_count = check_pic_count(loglist, image_list)
 
     #   for cam in range(cam_count):
     #      image_list[cam] = insert_missing_timestamp(loglist, image_list, cam)
@@ -944,7 +944,7 @@ if __name__ == '__main__':
                                 cam_bearings, distances_from_center)
                 print("=" * 80)
                 if args.josm:
-                    new_cam_names = [name + str(input_time_offset) for name in cam_names]
+                    new_cam_names = [name + " | " + str(input_time_offset) for name in cam_names]
                     write_josm_session(piclists_corrected, session_file_path, new_cam_names, args.gpxfile)
                     open_session_in_josm(session_file_path)
             except ValueError:
