@@ -880,7 +880,10 @@ if __name__ == '__main__':
     if args.logfile is None:
         print("=" * 30)
         args.logfile = find_file(args.source, "log")
-        # TODO raise an exception if find_file return none
+    if args.logfile is None:
+        print("No logfile found... Exiting...")
+        sys.exit()
+
 
     # Trying to find a nmea file in the working directory if none is given in the command line
     if args.gpxfile is None:
@@ -889,7 +892,10 @@ if __name__ == '__main__':
     # Or a gpx file if there is no nmea file
     if args.gpxfile is None:
         args.gpxfile = find_file(args.source, "gpx")
-    # TODO raise an exception if args.gpxfile is None
+
+    if args.gpxfile is None:
+        print("No gpx/nmea file found... Exiting...")
+        sys.exit()
 
     #Parsing the multicam profile
     folder_string, cam_names, cam_bearings, distances_from_center, min_pic_distance = config_parse(args.profile)
