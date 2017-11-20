@@ -793,6 +793,7 @@ def arg_parse():
                         help="Time offset between GPX and photos. If your camera is ahead by one minute, time_offset is 60.",
                         default=0, type=float)
     parser.add_argument("-j", "--josm", help="Load the pictures in Josm (must be running)", action="store_true")
+    parser.add_argument("-n", "--no_retag", help="Don't ask if you want to restart the images geotagging", action="store_true")
     parser.add_argument("-w", "--write_exif", help="Write the new exif tags in the images", action="store_true")
     parser.add_argument("-x", "--exclude_close_pic", help="Move the too close pictures to the exluded folder", action="store_true")
 
@@ -926,6 +927,26 @@ if __name__ == '__main__':
         session_file_path = os.path.abspath(os.path.join(args.source, "session.jos"))
         write_josm_session(piclists_corrected, session_file_path, cam_names, args.gpxfile)
         open_session_in_josm(session_file_path)
+
+    if not args.no_retag:
+        print("=" * 80)
+        input_time_offset = 0
+        while True:
+            user_geo_input = raw_input("Apply a time offset and restart geotag? (value or n) : ")
+            if user_geo_input.lower() == "n":
+                break
+            try:
+                input_time_offset = float(user_geo_input)
+                print("=" * 80)
+                geotag_from_gpx(piclists_corrected, args.gpxfile, args.time_offset + input_time_offset,
+                                cam_bearings, distances_from_center)
+                print("=" * 80)
+                if args.josm:
+                    new_cam_names = [name + " | " + str(input_time_offset) for name in cam_names]
+                    write_josm_session(piclists_corrected, session_file_path, new_cam_names, args.gpxfile)
+                    open_session_in_josm(session_file_path)
+            except ValueError:
+                print("Invalid input")
 
     # Write the new exif data in the pictures.
     print("=" * 80)
