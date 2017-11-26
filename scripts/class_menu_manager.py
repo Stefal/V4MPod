@@ -30,6 +30,8 @@ class Position:
     def NextLine(self):
         Pass
         #todo
+    def PrevLine(self):
+        Pass
 
 
 Pos = Position("menu_top", 1, 0)
@@ -38,23 +40,6 @@ Pos = Position("menu_top", 1, 0)
 pos = menu[-2]
 level = menu[-1]
 
-
-def menu_previous_line():
-    global menu
-    pos = menu[-2]
-    level = menu[-1]
-    try:
-        if pos[level] > 0:
-            # monter d'une ligne et rafraichir l'écran
-            menu[-2][menu[-1]] -= 1  # actualise la position
-            Pos.line = Pos.line -1
-            if level == 0:
-                print(menu[0][menu[-2][0]])
-            if level == 1:
-                print(menu[menu[-2][level - 1] + 1][menu[-2][level]])
-
-    except:
-        None
 
 def menu_next_line():
     global menu
@@ -70,6 +55,25 @@ def menu_next_line():
             menu[-2][level] += 1  # actualise la position
             print(menu[menu[-2][level-1]+1][menu[-2][level]])
             Pos.line = Pos.line + 1
+    except:
+        None
+
+
+
+def menu_previous_line():
+    global menu
+    pos = menu[-2]
+    level = menu[-1]
+    try:
+        if pos[level] > 0:
+            # monter d'une ligne et rafraichir l'écran
+            menu[-2][menu[-1]] -= 1  # actualise la position
+            Pos.Line = Pos.Line -1
+            if level == 0:
+                print(menu[0][menu[-2][0]])
+            if level == 1:
+                print(menu[menu[-2][level - 1] + 1][menu[-2][level]])
+
     except:
         None
 
