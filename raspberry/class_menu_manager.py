@@ -41,6 +41,11 @@ set_tm = ET.SubElement(menuA, "TimeLapse Settings", func="blala()")
 tm_set1 = ET.SubElement(set_tm, "Setting 1")
 tm_set2 = ET.SubElement(set_tm, "Setting 2")
 cam_set = ET.SubElement(menuB, "camera choice")
-list(root)
-tm_start.get("func")
-root[0][2]
+#list(root)
+#tm_start.get("func")
+#root[0][2]
+mymenu = Position(root)
+mymenu.next_level()
+mymenu.next_line()
+mymenu.print_menu()
+
