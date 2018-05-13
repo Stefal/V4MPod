@@ -146,9 +146,9 @@ class speedometer(object):
         self.speed = 0
     
     def read_queue(self):
-        pulse_count = self.queue.qsize()
+         
             
-        for i in range(pulse_count + 1):
+        for pulse_count in range(self.queue.qsize() + 1):
             try:
                 pulse_timestamp = self.queue.get(timeout = 2)
                 elapsed_time = pulse_timestamp - self.prev_time
