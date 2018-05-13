@@ -8,6 +8,7 @@ import PyCmdMessenger
 import subprocess
 import gpsd
 import threading
+import Queue
 
 import Adafruit_Nokia_LCD as LCD
 import Adafruit_GPIO.SPI as SPI
@@ -116,17 +117,55 @@ bus.read_byte_data(DEVICE, INTCAPA)
 #Hall sensor pin
 hall_pin=25
 
+#Hall pulse queue
+hall_pulse_queue = queue.Queue()
+
+#Wheel radius (meter)
+wradius = 0.35
+circumference = 2*3.1415*wradius
+
 # Set this channel as input
 GPIO.setup(hall_pin, GPIO.IN)
 GPIO.setup(hall_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def hall_callback(hall_pin):
-  print('Edge detected on pin %s' %hall_pin)
-  cam_takePic(cam_range)
-  lcd_write_text("Picture", 1)
+    hall_pulse_queue.put(time.time())
+    print('Edge detected on pin %s' %hall_pin)
+  
 
 GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
 
+
+
+class speedometer(object):
+    def __init__(self, wheel_radius, magnet, queue):
+        self.pulse_distance = wheel_radius*2*3.1415 / magnet
+        self.queue = queue
+        self.prev_time = time.time()
+        self.total_distance = 0
+        self.speed = 0
+    
+    def read_queue(self):
+        pulse_count = self.queue.qsize()
+            
+        for i in range(pulse_count + 1):
+            try:
+                pulse_timestamp = self.queue.get(timeout = 2)
+                elapsed_time = pulse_timestamp - self.prev_time
+                self.speed = self.pulse_distance / elapsed_time
+                self.total_distance += self.pulse_distance
+                self.prev_time = pulse_timestamp
+                
+            except queue.Empty:
+                self.speed = 0
+            
+            finally:
+                print("Distance : {0} - Vitesse : {1}m/s".format(self.total_distance, self.speed))
+                
+            
+        
+    
+    
 """
 void handleKeypress ()
 {
