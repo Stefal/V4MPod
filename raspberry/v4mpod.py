@@ -122,7 +122,7 @@ GPIO.setup(hall_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def hall_callback(hall_pin):
   print('Edge detected on pin %s' %hall_pin)
-  takePic(cam_range)
+  cam_takePic(cam_range)
   lcd_write_text("Picture", 1)
 
 GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
@@ -182,16 +182,16 @@ def handleKeyPress():
     print(bin(KeyValue))
     if KeyValue & 0b1:
         print("Power down button")
-        power_down(cam_range)
+        cam_power_down(cam_range)
         lcd_write_text("Powering down...", 4)
     elif KeyValue & 0b10:
         print("Power up button")
-        power_up(cam_range)
+        cam_power_up(cam_range)
         lcd_write_text("Powering up..", 15)
         lcd_write_text("Cams ready", 5)
     elif KeyValue & 0b100:
         print("Shutter button")
-        takePic(cam_range)
+        cam_takePic(cam_range)
         lcd_write_text("Picture", 1)
     elif KeyValue & 0b1000:
         print("Select button")
@@ -306,7 +306,7 @@ except:
 # List of command names (and formats for their associated arguments). These must
 # be in the same order as in the sketch.
 
-def takePic(cam=0b00000001, pic_id=1):
+def cam_takePic(cam=0b00000001, pic_id=1):
     c.send("KTakepic", cam, pic_id)
     pic_return = c.receive(arg_formats="bLI")
     #print(pic_return)
@@ -326,18 +326,18 @@ def takePic(cam=0b00000001, pic_id=1):
 
 def picLoop(cam=0b00000001, pic_nbr=10, pause=1):
     for i in range(pic_nbr-1):
-        takePic(cam, i)
+        cam_takePic(cam, i)
         time.sleep(pause)
         
 
-def power_up(cam=0b00000001):
+def cam_power_up(cam=0b00000001):
     c.send("KPower_up", cam)
     time.sleep(6)
     start_return = c.receive(arg_formats="b")
     logfile.write(str(start_return) + "\n")
     print(start_return)
     
-def power_down(cam=0b00000001):
+def cam_power_down(cam=0b00000001):
     c.send("KPower_down", cam)
     down_return=c.receive()
     logfile.write(str(down_return) + "\n")
@@ -444,9 +444,9 @@ def menu_next_line():
 
 
 
-menuA = [[{"Name":"Take Pic", "Func":"takePic", "Param":""},
-{"Name":"Power up Cams", "Func":"power_up", "Param":""},
- {"Name":"Power down Cams", "Func":"power_down", "Param":""},
+menuA = [[{"Name":"Take Pic", "Func":"cam_takePic", "Param":""},
+{"Name":"Power up Cams", "Func":"cam_power_up", "Param":""},
+ {"Name":"Power down Cams", "Func":"cam_power_down", "Param":""},
  {"Name":"Exit", "Func":"exit_loop", "Param":""},
  {"Name":"Start cam log", "Func":"logfile=open_file", "Param":""},
  {"Name":"Stop Gnss log", "Func":"stop_gnss_log", "Param":""},
