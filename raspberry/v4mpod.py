@@ -146,8 +146,7 @@ class speedometer(object):
         self.speed = 0
     
     def read_queue(self):
-         
-            
+                    
         for pulse_count in range(self.queue.qsize() + 1):
             try:
                 pulse_timestamp = self.queue.get(timeout = 2)
@@ -161,11 +160,14 @@ class speedometer(object):
             
             finally:
                 print("Distance : {0} - Vitesse : {1}m/s".format(self.total_distance, self.speed))
-                
-            
         
-    
-    
+        # Revéfifier la pertinence de cette solution dans les différents cas :
+        # Il faut tenir compte de la vitesse de la rotation de la roue
+        # ainsi que de la fréquence d'appel de cette méthode
+        # Il y a plusieurs cas "délicats" :
+        # la fréquence d'appel de la méthode est inférieure à celle de l'arrivée des pulses
+        # la fréquence d'appel de la méthode est supérieure à celle de l'arrivée des pulses
+
 """
 void handleKeypress ()
 {
