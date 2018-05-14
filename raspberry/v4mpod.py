@@ -138,7 +138,18 @@ GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
 
 
 class speedometer(threading.Thread):
-    def __init__(self, wheel_radius, magnet, queue, rate=0.1):
+    """Speed and distance class, which run in a separate thread
+    This class read the pulses from a sensor on a wheel, to compute speed and
+    distance.
+    Each pulse should be a timestamp and is in a queue.
+    """
+    def __init__(self, wheel_radius, magnet, queue, rate=0.01):
+        """init the class with these parameters
+        :param wheel_radius: the wheel radius, in meters
+        :param magnet: how many magnets are on the wheel
+        :param queue: The queue the class should get pulses timestamps from
+        :param rate: Refresh speed rate (default to 10 milliseconds)
+        """
         threading.Thread.__init__(self)
         self.pulse_distance = wheel_radius*2*3.1415 / magnet
         self.queue = queue
@@ -151,7 +162,7 @@ class speedometer(threading.Thread):
         while True:
             self.read_queue()
             time.sleep(self.rate)
-    
+        
     def read_queue(self):
                     
         for pulse_count in range(self.queue.qsize() + 1):
