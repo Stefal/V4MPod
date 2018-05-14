@@ -8,6 +8,7 @@ import PyCmdMessenger
 import subprocess
 import gpsd
 import threading
+import Queue
 
 import Adafruit_Nokia_LCD as LCD
 import Adafruit_GPIO.SPI as SPI
@@ -116,16 +117,74 @@ bus.read_byte_data(DEVICE, INTCAPA)
 #Hall sensor pin
 hall_pin=25
 
+#Hall pulse queue
+hall_pulse_queue = queue.Queue()
+
+#Wheel radius (meter)
+wradius = 0.35
+circumference = 2*3.1415*wradius
+
 # Set this channel as input
 GPIO.setup(hall_pin, GPIO.IN)
 GPIO.setup(hall_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def hall_callback(hall_pin):
-  print('Edge detected on pin %s' %hall_pin)
-  takePic(cam_range)
-  lcd_write_text("Picture", 1)
+    hall_pulse_queue.put(time.time())
+    print('Edge detected on pin %s' %hall_pin)
+  
 
 GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
+
+
+
+class speedometer(threading.Thread):
+    """Speed and distance class, which run in a separate thread
+    This class read the pulses from a sensor on a wheel, to compute speed and
+    distance.
+    Each pulse should be a timestamp and is in a queue.
+    """
+    def __init__(self, wheel_radius, magnet, queue, rate=0.01):
+        """init the class with these parameters
+        :param wheel_radius: the wheel radius, in meters
+        :param magnet: how many magnets are on the wheel
+        :param queue: The queue the class should get pulses timestamps from
+        :param rate: Refresh speed rate (default to 10 milliseconds)
+        """
+        threading.Thread.__init__(self)
+        self.pulse_distance = wheel_radius*2*3.1415 / magnet
+        self.queue = queue
+        self.prev_time = time.time()
+        self.total_distance = 0
+        self.speed = 0
+        self.rate = rate
+    
+    def run():
+        while True:
+            self.read_queue()
+            time.sleep(self.rate)
+        
+    def read_queue(self):
+                    
+        for pulse_count in range(self.queue.qsize() + 1):
+            try:
+                pulse_timestamp = self.queue.get(timeout = 2)
+                elapsed_time = pulse_timestamp - self.prev_time
+                self.speed = self.pulse_distance / elapsed_time
+                self.total_distance += self.pulse_distance
+                self.prev_time = pulse_timestamp
+                
+            except queue.Empty:
+                self.speed = 0
+            
+            finally:
+                print("Distance : {0} - Vitesse : {1}m/s".format(self.total_distance, self.speed))
+        
+        # Revéfifier la pertinence de cette solution dans les différents cas :
+        # Il faut tenir compte de la vitesse de la rotation de la roue
+        # ainsi que de la fréquence d'appel de cette méthode
+        # Il y a plusieurs cas "délicats" :
+        # la fréquence d'appel de la méthode est inférieure à celle de l'arrivée des pulses
+        # la fréquence d'appel de la méthode est supérieure à celle de l'arrivée des pulses
 
 """
 void handleKeypress ()
@@ -182,16 +241,16 @@ def handleKeyPress():
     print(bin(KeyValue))
     if KeyValue & 0b1:
         print("Power down button")
-        power_down(cam_range)
+        cam_power_down(cam_range)
         lcd_write_text("Powering down...", 4)
     elif KeyValue & 0b10:
         print("Power up button")
-        power_up(cam_range)
+        cam_power_up(cam_range)
         lcd_write_text("Powering up..", 15)
         lcd_write_text("Cams ready", 5)
     elif KeyValue & 0b100:
         print("Shutter button")
-        takePic(cam_range)
+        cam_takePic(cam_range)
         lcd_write_text("Picture", 1)
     elif KeyValue & 0b1000:
         print("Select button")
@@ -306,7 +365,7 @@ except:
 # List of command names (and formats for their associated arguments). These must
 # be in the same order as in the sketch.
 
-def takePic(cam=0b00000001, pic_id=1):
+def cam_takePic(cam=0b00000001, pic_id=1):
     c.send("KTakepic", cam, pic_id)
     pic_return = c.receive(arg_formats="bLI")
     #print(pic_return)
@@ -326,18 +385,18 @@ def takePic(cam=0b00000001, pic_id=1):
 
 def picLoop(cam=0b00000001, pic_nbr=10, pause=1):
     for i in range(pic_nbr-1):
-        takePic(cam, i)
+        cam_takePic(cam, i)
         time.sleep(pause)
         
 
-def power_up(cam=0b00000001):
+def cam_power_up(cam=0b00000001):
     c.send("KPower_up", cam)
     time.sleep(6)
     start_return = c.receive(arg_formats="b")
     logfile.write(str(start_return) + "\n")
     print(start_return)
     
-def power_down(cam=0b00000001):
+def cam_power_down(cam=0b00000001):
     c.send("KPower_down", cam)
     down_return=c.receive()
     logfile.write(str(down_return) + "\n")
@@ -444,9 +503,9 @@ def menu_next_line():
 
 
 
-menuA = [[{"Name":"Take Pic", "Func":"takePic", "Param":""},
-{"Name":"Power up Cams", "Func":"power_up", "Param":""},
- {"Name":"Power down Cams", "Func":"power_down", "Param":""},
+menuA = [[{"Name":"Take Pic", "Func":"cam_takePic", "Param":""},
+{"Name":"Power up Cams", "Func":"cam_power_up", "Param":""},
+ {"Name":"Power down Cams", "Func":"cam_power_down", "Param":""},
  {"Name":"Exit", "Func":"exit_loop", "Param":""},
  {"Name":"Start cam log", "Func":"logfile=open_file", "Param":""},
  {"Name":"Stop Gnss log", "Func":"stop_gnss_log", "Param":""},
