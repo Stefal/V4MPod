@@ -137,13 +137,20 @@ GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
 
 
 
-class speedometer(object):
-    def __init__(self, wheel_radius, magnet, queue):
+class speedometer(threading.Thread):
+    def __init__(self, wheel_radius, magnet, queue, rate=0.1):
+        threading.Thread.__init__(self)
         self.pulse_distance = wheel_radius*2*3.1415 / magnet
         self.queue = queue
         self.prev_time = time.time()
         self.total_distance = 0
         self.speed = 0
+        self.rate = rate
+    
+    def run():
+        while True:
+            self.read_queue()
+            time.sleep(self.rate)
     
     def read_queue(self):
                     
