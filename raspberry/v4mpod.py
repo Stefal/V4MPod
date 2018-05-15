@@ -8,17 +8,17 @@ import PyCmdMessenger
 import subprocess
 import gpsd
 import threading
-import Queue
 
 import Adafruit_Nokia_LCD as LCD
 import Adafruit_GPIO.SPI as SPI
 import lcd_menu as menu
 
+from queue import Queue
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
 
-cam_range=0b00011111
+cam_range=0b00001111
 
 # Set Rpi.GPIO to BCM mode
 GPIO.setmode(GPIO.BCM)
@@ -117,21 +117,17 @@ bus.read_byte_data(DEVICE, INTCAPA)
 #Hall sensor pin
 hall_pin=25
 
-#Hall pulse queue
-hall_pulse_queue = queue.Queue()
-
-#Wheel radius (meter)
-wradius = 0.35
-circumference = 2*3.1415*wradius
-
 # Set this channel as input
 GPIO.setup(hall_pin, GPIO.IN)
 GPIO.setup(hall_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
+#Hall pulse queue
+hall_pulse_queue = Queue()
+
 def hall_callback(hall_pin):
-    hall_pulse_queue.put(time.time())
-    print('Edge detected on pin %s' %hall_pin)
-  
+  hall_pulse_queue.put(time.time())
+  #print('Edge detected on pin %s' %hall_pin)
+ 
 
 GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
 
@@ -314,18 +310,19 @@ def handleKeyPress():
     
     print(bin(KeyValue))
     if KeyValue & 0b1:
-        print("Power down button")
-        cam_power_down(cam_range)
-        lcd_write_text("Powering down...", 4)
-    elif KeyValue & 0b10:
         print("Power up button")
-        cam_power_up(cam_range)
-        lcd_write_text("Powering up..", 15)
+        power_up(cam_range)
+        lcd_write_text("Powering up...", 10)
         lcd_write_text("Cams ready", 5)
+    elif KeyValue & 0b10:
+        print("Power down button")
+        power_down(cam_range)
+        lcd_write_text("Powering down..", 5)
+        
     elif KeyValue & 0b100:
         print("Shutter button")
-        cam_takePic(cam_range)
-        lcd_write_text("Picture", 1)
+        takePic(cam_range, logqueue, pic_count)
+        #lcd_write_text("Picture", 1)
     elif KeyValue & 0b1000:
         print("Select button")
         keySelect = True
@@ -439,7 +436,8 @@ except:
 # List of command names (and formats for their associated arguments). These must
 # be in the same order as in the sketch.
 
-def cam_takePic(cam=0b00000001, pic_id=1):
+def takePic(cam, queue, pic_id=1):
+    timestamp=time.time()
     c.send("KTakepic", cam, pic_id)
     pic_return = c.receive(arg_formats="bLI")
     #print(pic_return)
@@ -454,23 +452,39 @@ def cam_takePic(cam=0b00000001, pic_id=1):
     #version avec time.gmtime
     #print(pic_return[0], pic_return[1][1:3], bin(pic_return[1][0])[2:].zfill(8), time.gmtime(pic_return[2]))
 
-    logfile.write(str(pic_return) + "," + str(bin(cam)) + "," + status + "\n")
+    queue.put(str(timestamp) + "," + str(pic_return) + "," + str(bin(cam)) + "," + status + "\n")
+    global pic_count
+    pic_count += 1
     return pic_return
 
-def picLoop(cam=0b00000001, pic_nbr=10, pause=1):
+def picLoop(cam, pic_nbr, pause, logqueue):
+    t = threading.currentThread()
     for i in range(pic_nbr-1):
-        cam_takePic(cam, i)
-        time.sleep(pause)
+        if  getattr(t, "do_run", True):
+            takePic(cam, logqueue, i)
+            time.sleep(pause)
+        else:
+            break
         
 
-def cam_power_up(cam=0b00000001):
+def start_Timelapse():
+    global timelapsethread
+    timelapsethread=threading.Thread(target=picLoop, args=(cam_range, 100000, 1.3, logqueue,), name="Picloop")
+    timelapsethread.start()
+    
+def stop_Timelapse():
+    global timelapsethread
+    timelapsethread.do_run = False
+
+
+def power_up(cam=0b00000001):
     c.send("KPower_up", cam)
     time.sleep(6)
     start_return = c.receive(arg_formats="b")
     logfile.write(str(start_return) + "\n")
     print(start_return)
     
-def cam_power_down(cam=0b00000001):
+def power_down(cam=0b00000001):
     c.send("KPower_down", cam)
     down_return=c.receive()
     logfile.write(str(down_return) + "\n")
@@ -481,16 +495,35 @@ def start_gnss_log():
     
 def stop_gnss_log():
     subprocess.call(["killall", "gpspipe"])
+    
+def show_log():
+    lcd_write_text(logfile.readline()[-4:], 5)
+    menu.display_img(current_img, disp)
+
+def gnss_fix():
+    gpsd.connect()
+    mode=0
+    while mode < 3:
+        try:
+            packet=gpsd.get_current()
+            mode = packet.mode
+        except:
+            pass
+            
+    print("Gnss Fix")
+    time.sleep(10)
 
 def gnss_localization():
     gpsd.connect()
-    packet=gpsd.get_current()
-    try:
-        gnss_info = str(packet.position()[0]) + "\n" + str(packet.position()[1]) + "\n" + packet.time[-13:]
-    except:
-        gnss_info = "Error"
-        
-    lcd_write_text(gnss_info, 4)
+    timer= 0
+    while timer < 5:
+        try:
+            packet=gpsd.get_current()
+            gnss_info = str(packet.position()[0]) + "\n" + str(packet.position()[1]) + "\n" + packet.time[-13:]
+            lcd_write_text(gnss_info, 1)
+        except:
+            gnss_info = "Error"
+        timer +=1
     menu.display_img(current_img, disp)
     print(packet.position())
     print(packet.time)
@@ -499,7 +532,7 @@ def exit_loop():
     global keepRunning
     keepRunning=False
 
-def power_down():
+def power_down_pi():
     exit_prog()
     os.system("sudo shutdown -h now")
         
@@ -522,27 +555,33 @@ def exit_prog():
     #    print("Erreur en quittant")
     print("Exiting program B")
     
-
 def open_file():
     global flushthread
     now=datetime.datetime.now()
     filename = os.path.expanduser("~") + "/Documents/Sessions_V4MPOD/cam_log_" + now.strftime("%Y-%m-%d_%H.%M.%S") + ".log"
     logfile=open(filename, "w")
-    flushthread=threading.Thread(target=flush_log, name="flushlog")
+    flushthread=threading.Thread(target=flush_log, args=(logqueue,), name="flushlog")
     flushthread.start()
     return logfile
-def flush_log():
+    
+def flush_log(logqueue):
     #since Python 3.4 file are inheritable. I think it's why
     #flush() alone doesn't work in this thread.
+    
     t = threading.currentThread()
     while getattr(t, "do_run", True):
         time.sleep(10)
         try:
+            while not logqueue.empty():
+                #logfile.write(logqueue.get())
+                logline = logqueue.get()
+                print (logline)
+                logfile.write(logline)
+                logqueue.task_done()
             logfile.flush()
             os.fsync(logfile.fileno())
         except:
             None
-
 
 def menu_previous_line():
     global menuA
@@ -576,32 +615,41 @@ def menu_next_line():
         None
 
 
-
-menuA = [[{"Name":"Take Pic", "Func":"cam_takePic", "Param":""},
-{"Name":"Power up Cams", "Func":"cam_power_up", "Param":""},
- {"Name":"Power down Cams", "Func":"cam_power_down", "Param":""},
- {"Name":"Exit", "Func":"exit_loop", "Param":""},
+menuA = [[{"Name":"Take Pic", "Func":"takePic", "Param":"cam_range, logqueue"},
+{"Name":"Power up Cams", "Func":"power_up", "Param":"cam_range"},
+ {"Name":"Power down Cams", "Func":"power_down", "Param":"cam_range"},
+ {"Name":"Start TimeLapse", "Func":"start_Timelapse", "Param":""},
+ {"Name":"Stop TimeLapse", "Func":"stop_Timelapse", "Param":""},
  {"Name":"Start cam log", "Func":"logfile=open_file", "Param":""},
  {"Name":"Stop Gnss log", "Func":"stop_gnss_log", "Param":""},
- {"Name":"Power off PI", "Func":"power_down", "Param":""},
- {"Name":"test", "Func":"gnss_localization", "Param":""},
+ {"Name":"GNSS Info", "Func":"gnss_localization", "Param":""},
+ {"Name":"Log", "Func":"show_log", "Param":""},
+ {"Name":"Exit", "Func":"exit_loop", "Param":""},
+ {"Name":"Power off PI", "Func":"power_down_pi", "Param":""},
+
  ],
         [0, 0], 0]
 
 # Main
 
 splash_boot()
+gnss_fix()
 keyDown = False
 keyUp = False
 keySelect = False
 keyBack = False
 keepRunning=True
 flushthread = None
+timelapsethread = None
+Timelapse = False
+pic_count = 0
+logqueue=Queue(maxsize=0)
 back=menu.create_blanck_img()
 img_menu_top = menu.create_full_img(menuA[0])
 current_img=menu.select_line(img_menu_top, back, 1, disp)
 start_gnss_log()
 logfile=open_file()
+
 
 # Loop until user presses CTRL-C
 
