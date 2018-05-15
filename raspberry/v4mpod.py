@@ -135,6 +135,54 @@ def hall_callback(hall_pin):
 
 GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
 
+class shutter_ctrl(threading.Thread):
+    """To send shutter to the cameras"""
+    def __init__(self, queue, distance_obj, distance_interval = 0, time_interval = 0, mode = "distance", rate = 0.01):
+        """
+        param: queue: A queue.Queue object
+        param: time_interval: the time interval between each picture in time-base mode
+        param: distance_obj: a speedometer class instance
+        param: mode: "distance" or "time" base mode
+        param: rate: refresh rate
+        """ 
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.distance_interval = distance_interval
+        self.time_interval = time_interval
+        self.distance_obj = distance_obj if distance_obj.speed else None
+        self.mode = mode if mode == "time" else "distance"
+        self.rate = rate
+        self.stopit = False
+        self.prev_time = time.time()
+        self.shutter_count = 0
+        
+    def run(self):
+        while not self.stopit:
+            if self.mode == "time":
+                self.time_base()
+            elif self.mode == "distance":
+                self.distance_base()
+            time.sleep(self.rate)
+        
+    def time_base(self):
+        if self.prev_time + self.time_interval <= time.time():
+            self.shutter_count +=1
+            print("shutter: {0}".format(self.shutter_count))
+            self.prev_time = time.time() 
+            #TODO tenir compte d'un temps minimum entre chaque déclenchement
+            #TODO reprendre le code qui vérifie que le déclenchement a eu lieu       
+            
+    def distance_base(self):
+        try:
+            time_interval = self.distance_interval / self.distance_obj.speed
+            
+        except ZeroDivisionError:
+            # when speed is 0, add a very long time
+            time_interval = time.time() + 3600 
+        
+        self.time_interval = time_interval
+        self.time_base()
+        
 
 
 class speedometer(threading.Thread):
@@ -157,9 +205,10 @@ class speedometer(threading.Thread):
         self.total_distance = 0
         self.speed = 0
         self.rate = rate
+        self.stopit = False
     
-    def run():
-        while True:
+    def run(self):
+        while not self.stopit:
             self.read_queue()
             time.sleep(self.rate)
         
