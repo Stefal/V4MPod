@@ -137,7 +137,7 @@ GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
 
 class shutter_ctrl(threading.Thread):
     """To send shutter to the cameras"""
-    def __init__(self, queue, distance_obj, distance_interval = 0, time_interval = 0, mode = "distance", rate = 0.01):
+    def __init__(self, queue, speed_obj, distance_interval = 0, time_interval = 0, mode = "distance", rate = 0.01):
         """
         param: queue: A queue.Queue object
         param: time_interval: the time interval between each picture in time-base mode
@@ -149,41 +149,61 @@ class shutter_ctrl(threading.Thread):
         self.queue = queue
         self.distance_interval = distance_interval
         self.time_interval = time_interval
-        self.distance_obj = distance_obj if distance_obj.speed else None
+        self.min_time = 1
+        self.speed_obj = speed_obj
         self.mode = mode if mode == "time" else "distance"
         self.rate = rate
-        self.stopit = False
+        self.prev_distance = 0
         self.prev_time = time.time()
         self.shutter_count = 0
+        self._pause = False
+        self._stop = False
         
     def run(self):
-        while not self.stopit:
-            if self.mode == "time":
-                self.time_base()
-            elif self.mode == "distance":
-                self.distance_base()
+        while not self._stop:
+            while not self._pause:
+                if self.mode == "time":
+                    self.time_base()
+                elif self.mode == "distance":
+                    self.distance_base()
+                time.sleep(self.rate)
             time.sleep(self.rate)
         
     def time_base(self):
+        
         if self.prev_time + self.time_interval <= time.time():
-            self.shutter_count +=1
             print("shutter: {0}".format(self.shutter_count))
-            self.prev_time = time.time() 
+            self.shutter_count +=1
+            self.prev_time = time.time()
             #TODO tenir compte d'un temps minimum entre chaque déclenchement
             #TODO reprendre le code qui vérifie que le déclenchement a eu lieu       
             
     def distance_base(self):
         try:
-            time_interval = self.distance_interval / self.distance_obj.speed
+            time_interval = self.distance_interval / self.speed_obj.speed
             
         except ZeroDivisionError:
             # when speed is 0, add a very long time
             time_interval = time.time() + 3600 
         
         self.time_interval = time_interval
-        self.time_base()
+        #control de l'augmentation de la distance.
+        if self.speed_obj.total_distance > self.prev_distance:
+            self.time_base()
+            self.prev_distance = self.speed_obj.total_distance
+            
+        #TODO regarder pourquoi le premier déclenchement après un arrêt
+        # du vélo (speed = 0), arrive un peu trop vite.
+            
+    def stop(self):
+        self._stop = True
+            
+    def pause(self):
+        self._pause = True
         
-
+    def resume(self):
+        self._pause = False
+        
 
 class speedometer(threading.Thread):
     """Speed and distance class, which run in a separate thread
@@ -205,10 +225,10 @@ class speedometer(threading.Thread):
         self.total_distance = 0
         self.speed = 0
         self.rate = rate
-        self.stopit = False
+        self._stop = False
     
     def run(self):
-        while not self.stopit:
+        while not self._stop:
             self.read_queue()
             time.sleep(self.rate)
         
@@ -226,14 +246,19 @@ class speedometer(threading.Thread):
                 self.speed = 0
             
             finally:
-                print("Distance : {0} - Vitesse : {1}m/s".format(self.total_distance, self.speed))
-        
+                pass
+                #print("Distance : {0} - Vitesse : {1}m/s".format(self.total_distance, self.speed))
         # Revéfifier la pertinence de cette solution dans les différents cas :
         # Il faut tenir compte de la vitesse de la rotation de la roue
         # ainsi que de la fréquence d'appel de cette méthode
         # Il y a plusieurs cas "délicats" :
         # la fréquence d'appel de la méthode est inférieure à celle de l'arrivée des pulses
         # la fréquence d'appel de la méthode est supérieure à celle de l'arrivée des pulses
+ 
+    def stop(self):
+        self._stop = True
+        
+        
 
 """
 void handleKeypress ()
