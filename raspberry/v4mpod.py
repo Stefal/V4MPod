@@ -151,6 +151,7 @@ class shutter_ctrl(threading.Thread):
         self.rate = rate
         self.prev_distance = 0
         self.prev_time = time.time()
+        self.prev_sht_rtn = time.time()
         self.shutter_count = 0
         self._pause = False
         self._stop = False
@@ -168,10 +169,17 @@ class shutter_ctrl(threading.Thread):
     def time_base(self):
         
         if self.prev_time + self.time_interval <= time.time():
-            print("shutter: {0}".format(self.shutter_count))
-            self.shutter_count +=1
             self.prev_time = time.time()
-            #TODO tenir compte d'un temps minimum entre chaque déclenchement
+            print("shutter: {0}".format(self.shutter_count))
+            #takePic(cam_range, logqueue)
+            
+            self.shutter_count +=1
+            self.prev_sht_rtn = time.time()
+            
+            #TODO tenir compte d'un temps minimum entre la réponse et 
+            # le prochain déclenchement.
+            # A voir si ça ne doit pas plutôt être géré du côté de la gestion
+            # des caméras
             #TODO reprendre le code qui vérifie que le déclenchement a eu lieu       
             
     def distance_base(self):
@@ -414,6 +422,8 @@ def beep(duration=0.2, pause=0.2, repeat=0):
         GPIO.output(buzzer_pin,0)
         time.sleep(pause)
 
+
+
 # Initialize an ArduinoBoard instance.  This is where you specify baud rate and
 # serial timeout.  If you are using a non ATmega328 board, you might also need
 # to set the data sizes (bytes for integers, longs, floats, and doubles). 
@@ -436,7 +446,9 @@ except:
 # List of command names (and formats for their associated arguments). These must
 # be in the same order as in the sketch.
 
-def takePic(cam, queue, pic_id=1):
+def takePic(cam, log_queue, pic_id=1):
+    #TODO ajouter un retard si le délai entre le déclenchement précédent
+    # et le nouveau est trop court.
     timestamp=time.time()
     c.send("KTakepic", cam, pic_id)
     pic_return = c.receive(arg_formats="bLI")
@@ -452,7 +464,9 @@ def takePic(cam, queue, pic_id=1):
     #version avec time.gmtime
     #print(pic_return[0], pic_return[1][1:3], bin(pic_return[1][0])[2:].zfill(8), time.gmtime(pic_return[2]))
 
-    queue.put(str(timestamp) + "," + str(pic_return) + "," + str(bin(cam)) + "," + status + "\n")
+    log_queue.put(str(timestamp) + "," + str(pic_return) + "," + str(bin(cam)) + "," + status + "\n")
+    
+    
     global pic_count
     pic_count += 1
     return pic_return
