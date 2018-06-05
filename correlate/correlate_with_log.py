@@ -580,10 +580,10 @@ def parse_log(path_to_logfile):
         line = line.replace(")", "")
         line = line.replace(" ", "")
         line = line.split(",")
-        if "KTakepic" in line:
+        if "KTakepic" in line and not line[0].startswith("#"):
             try:
                 loglist.append(log_infos(datetime.datetime.fromtimestamp(float(line[0])), line[1],
-                                         datetime.datetime.fromtimestamp(float(line[5])), int(line[3]), line[6][2:],
+                                         datetime.datetime.fromtimestamp(float(line[5])), int(line[3]), bin(int(line[2]))[2:].zfill(cam_count),
                                          int(line[4])))
 
             except:
@@ -766,6 +766,7 @@ def open_session_in_josm(session_file_path, remote_port=8111):
         session_file_path = session_file_path.replace(os.sep, posixpath.sep)
 
     print("Opening the session in Josm....", end="")
+    print("http://127.0.0.1:" + str(remote_port) + "/open_file?filename=" + session_file_path)
     r = urllib2.urlopen("http://127.0.0.1:" + str(remote_port) + "/open_file?filename=" + session_file_path)
     answer = r.read()
     print("Success!") if "OK" in answer else print("Error!")
