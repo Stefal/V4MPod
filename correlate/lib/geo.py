@@ -196,8 +196,8 @@ def interpolate_lat_lon(points, t, max_dt=1):
     lon = (before[2]*dt_after + after[2]*dt_before) / (dt_before + dt_after)
 
     bearing = compute_bearing(before[1], before[2], after[1], after[2])
-
-    if before[3] is not None:
+    
+    if before[3] is not None and after[3] is not None:
         ele = (before[3]*dt_after + after[3]*dt_before) / (dt_before + dt_after)
     else:
         ele = None

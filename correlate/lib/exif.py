@@ -188,7 +188,7 @@ class EXIF:
             capture_time = "_".join(["{0:02d}".format(int(ts)) for ts in capture_time.split("_") if ts.isdigit()])
             capture_time = format_time(capture_time)
             sub_sec = self.extract_subsec()
-            capture_time = capture_time + datetime.timedelta(seconds=float(sub_sec)/10**len(str(sub_sec)))
+            capture_time = capture_time + datetime.timedelta(seconds=float("0." + sub_sec))
 
         return capture_time
 
@@ -353,8 +353,8 @@ class EXIF:
             'Image SubSecTime',
             'EXIF SubSecTime'
         ]
-        sub_sec, _ = self._extract_alternative_fields(fields, default=0, field_type=str)
-        sub_sec = int(sub_sec)
+        sub_sec, _ = self._extract_alternative_fields(fields, default='', field_type=str)
+        #sub_sec = int(sub_sec) <- Non non non
         return sub_sec
 
 
