@@ -24,9 +24,16 @@ cam_range=0b00001111
 GPIO.setmode(GPIO.BCM)
 
 # Channel used to receive MCP interrupts
-int_pin = 17
-# Set this channel as input
-GPIO.setup(int_pin, GPIO.IN)
+mcp1_inta_pin = 19
+mcp1_intb_pin = 16
+mcp2_inta_pin = 26
+mcp2_intb_pin = 20
+
+# Set these channels as input
+GPIO.setup(mcp1_inta_pin, GPIO.IN)
+GPIO.setup(mcp1_intb_pin, GPIO.IN)
+GPIO.setup(mcp2_inta_pin, GPIO.IN)
+GPIO.setup(mcp2_intb_pin, GPIO.IN)
 
 # Channel used for the buzzer
 buzzer_pin = 22
@@ -42,7 +49,8 @@ SPI_DEVICE = 0
 #bus = smbus.SMBus(0)  # Rev 1 Pi uses 0
 bus = smbus.SMBus(1) # Rev 2 Pi uses 1
 Keypressed = False
-DEVICE =  0x20 # Device address (A0-A2)
+MCP1 = 0x21
+MCP2 =  0x20 # Device address (A0-A2)
 IODIRA =  0x00   # IO direction  (0 = output, 1 = input (Default))
 IODIRB =  0x01
 IOPOLA =  0x02   # IO polarity   (0 = normal, 1 = inverse)
@@ -66,28 +74,75 @@ GPIOB =   0x13
 OLLATA =  0x14   # Output latch. Write to latch output.
 OLLATB =  0x15
 
-# Set all GPA pins as outputs by setting
-# all bits of IODIRA register to 0
-bus.write_byte_data(DEVICE,IODIRA,0x00)
+# Set some GPA pins as outputs by setting
+#  bits of IODIRA register to 0
+bus.write_byte_data(MCP2,IODIRA,0xFF)
  
 # Set output all 7 output bits to 0
-bus.write_byte_data(DEVICE,OLLATA,0)
+bus.write_byte_data(MCP2,OLLATA,0)
 
 # Set GPIOA polarity to normal
-bus.write_byte_data(DEVICE, IOPOLA, 0)
+bus.write_byte_data(MCP2, IOPOLA, 0)
 
 # Set GPIOB pins as inputs
-bus.write_byte_data(DEVICE,IODIRB, 0xFF)
+bus.write_byte_data(MCP2,IODIRB, 0x1F)
 # Enable pull up resistor on GPIOB
-bus.write_byte_data(DEVICE, GPPUB, 0xFF)
+bus.write_byte_data(MCP2, GPPUB, 0x1F)
 #Set GPIOB polarity as inverted
-bus.write_byte_data(DEVICE,IOPOLB, 0xFF)
+bus.write_byte_data(MCP2,IOPOLB, 0x1F)
+
+# Set outputs all 7 output bits to 0
+bus.write_byte_data(MCP2,GPIOB, 0x00)
 
 # no mirror interrupts, disable sequential mode, active HIGH
-bus.write_byte_data(DEVICE, IOCON, 0b01100010)
+bus.write_byte_data(MCP2, IOCON, 0b00100010)
+
+#Enable interrupt on port A
+bus.write_byte_data(MCP2, GPINTENA, 0xFF)
 
 #Enable interrupt on port B
-bus.write_byte_data(DEVICE, GPINTENB, 0xFF)
+bus.write_byte_data(MCP2, GPINTENB, 0xFF)
+
+
+# For the MCP1 :
+
+# Set all GPA pins as inputs by setting
+#  bits of IODIRA register to 1
+bus.write_byte_data(MCP1,IODIRA,0xFF)
+ 
+
+# Set GPIOA polarity to normal
+bus.write_byte_data(MCP1, IOPOLA, 0x00)
+
+# Enable pull up resistor on GPIOA
+#bus.write_byte_data(MCP1, GPPUA, 0xFF)
+
+# Set GPIOB 0-1 pins as inputs
+bus.write_byte_data(MCP1,IODIRB, 0x03)
+# Enable pull up resistor on GPIOB
+bus.write_byte_data(MCP1, GPPUB, 0x0F)
+#Set GPIOB polarity as inverted
+bus.write_byte_data(MCP1,IOPOLB, 0xFF)
+
+# no mirror interrupts, disable sequential mode, active HIGH
+bus.write_byte_data(MCP1, IOCON, 0b00100010)
+
+#Configure interrupt on port A as "interrupt-on-pin change"
+bus.write_byte_data(MCP1, INTCONA, 0x00)
+
+#bus.write_byte_data(MCP1, DEFVALA, 0xFF)
+#bus.write_byte_data(MCP1, INTCONA, 0xFF)
+
+#Enable interrupt on port A
+bus.write_byte_data(MCP1, GPINTENA, 0x01)
+
+#Enable interrupt on port B
+bus.write_byte_data(MCP1, GPINTENB, 0x03)
+
+
+#Enable mcp1 gpiob output 8 for usb charger
+#bus.write_byte_data(MCP1, GPIOB, 0x80)
+
 
 """ 
 for MyData in range(1,16):
@@ -108,11 +163,11 @@ def my_callback(channel):
     
 
 # add rising edge detection on a channel
-GPIO.add_event_detect(int_pin, GPIO.RISING, callback=my_callback) 
+GPIO.add_event_detect(mcp2_intb_pin, GPIO.RISING, callback=my_callback) 
 #reset interrupt on mcp, or an already active interrupt 
 #would disable a new one, rendering the mcp unusable.
-bus.read_byte_data(DEVICE, INTCAPB)
-bus.read_byte_data(DEVICE, INTCAPA) 
+bus.read_byte_data(MCP2, INTCAPB)
+bus.read_byte_data(MCP2, INTCAPA) 
 
 #Hall sensor pin
 hall_pin=25
@@ -126,10 +181,28 @@ hall_pulse_queue = Queue()
 
 def hall_callback(hall_pin):
   hall_pulse_queue.put(time.time())
-  #print('Edge detected on pin %s' %hall_pin)
+  print('Edge detected on pin %s' %hall_pin)
+  #temp
+  time.sleep(0.5)
+  bus.read_byte_data(MCP1, INTCAPA)
+  bus.read_byte_data(MCP1, INTCAPB)
  
 
-GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
+#GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
+
+# add rising edge detection on a channel
+#GPIO.add_event_detect(mcp1_inta_pin, GPIO.RISING, callback=hall_callback) 
+#reset interrupt on mcp, or an already active interrupt 
+#would disable a new one, rendering the mcp unusable.
+#bus.read_byte_data(MCP1, INTCAPA) 
+
+# add rising edge detection on a channel
+GPIO.add_event_detect(mcp1_intb_pin, GPIO.RISING, callback=my_callback) 
+#reset interrupt on mcp, or an already active interrupt 
+#would disable a new one, rendering the mcp unusable.
+bus.read_byte_data(MCP1, INTCAPB) 
+
+
 
 class shutter_ctrl(threading.Thread):
     """To send shutter to the cameras"""
@@ -153,7 +226,7 @@ class shutter_ctrl(threading.Thread):
         self.prev_time = time.time()
         self.prev_sht_rtn = time.time()
         self.shutter_count = 0
-        self._pause = False
+        self._pause = True
         self._stop = False
         
     def run(self):
@@ -171,7 +244,7 @@ class shutter_ctrl(threading.Thread):
         if self.prev_time + self.time_interval <= time.time():
             self.prev_time = time.time()
             print("shutter: {0}".format(self.shutter_count))
-            #takePic(cam_range, logqueue)
+            mycams.takePic(logqueue, cam_range)
             
             self.shutter_count +=1
             self.prev_sht_rtn = time.time()
@@ -309,49 +382,73 @@ void handleKeypress ()
 def handleKeyPress():
   print("In handleKeyPress function")
   KeyValue = 0
-  time.sleep(0.1)
+  time.sleep(0.01)
   global Keypressed, keyDown, keyUp, keySelect, keyBack
   Keypressed = False
-  if bus.read_byte_data(DEVICE, INFTFB):
-    KeyValue |= bus.read_byte_data(DEVICE, INTCAPB)
+  if bus.read_byte_data(MCP2, INFTFB):
+    KeyValue |= bus.read_byte_data(MCP2, INTCAPB)
     #clear interrupt
     
     print(bin(KeyValue))
     if KeyValue & 0b1:
-        print("Power up button")
-        power_up(cam_range)
-        lcd_write_text("Powering up...", 10)
-        lcd_write_text("Cams ready", 5)
+        print("Key_Right")
+        #power_up(cam_range)
+        #lcd_write_text("Powering up...", 10)
+        #lcd_write_text("Cams ready", 5)
     elif KeyValue & 0b10:
-        print("Power down button")
-        power_down(cam_range)
-        lcd_write_text("Powering down..", 5)
+        print("Key_Up")
+        #power_down(cam_range)
+        #lcd_write_text("Powering down..", 5)
+        keyUp = True
         
     elif KeyValue & 0b100:
-        print("Shutter button")
-        takePic(cam_range, logqueue, pic_count)
+        print("Key_Left")
+        #takePic(cam_range, logqueue, pic_count)
         #lcd_write_text("Picture", 1)
-    elif KeyValue & 0b1000:
-        print("Select button")
-        keySelect = True
-    elif KeyValue & 0b10000:
-        print("Down button")
-        keyDown = True
-    elif KeyValue & 0b100000:
-        print("Up button")
-        keyUp = True
-    elif KeyValue & 0b1000000:
-        print("Back button")
         keyBack = True
+        
+    elif KeyValue & 0b1000:
+        print("Key_Down")
+        keyDown = True
+        
+    elif KeyValue & 0b10000:
+        print("Key_Center")
+        keySelect = True
+        
     #reset interrupt on mcp    
-    bus.read_byte_data(DEVICE, INTCAPB)
-    bus.read_byte_data(DEVICE, INTCAPA)
+    bus.read_byte_data(MCP2, INTCAPB)
+    bus.read_byte_data(MCP2, INTCAPA)
+    
 
+  if bus.read_byte_data(MCP1, INFTFB):
+    KeyValue |= bus.read_byte_data(MCP1, INTCAPB)
+    #clear interrupt
+    
+    print(bin(KeyValue))
+    if KeyValue & 0b1:
+      print("Start switch")
+      shutter.resume()
+      #power_up(cam_range)
+      #lcd_write_text("Powering up...", 10)
+      #lcd_write_text("Cams ready", 5)
       
+    elif KeyValue == 0b0 or KeyValue == 0b10000000:
+      print("Stop switch")
+      shutter.pause()
+      #power_up(cam_range)
+      #lcd_write_text("Powering up...", 10)
+      #lcd_write_text("Cams ready", 5)
+      
+    elif KeyValue & 0b10:
+      print("Shutter Switch")
+      mycams.takePic(logqueue, cam_range)
+      
+    #reset interrupt on mcp    
+    bus.read_byte_data(MCP1, INTCAPB)
       
 
 # Hardware SPI usage:
-disp = LCD.PCD8544(DC, RST, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=4000000))
+disp = LCD.PCD8544(DC, RST, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=2000000))
 
 # Software SPI usage (defaults to bit-bang SPI interface):
 #disp = LCD.PCD8544(DC, RST, SCLK, DIN, CS)
@@ -422,11 +519,99 @@ def beep(duration=0.2, pause=0.2, repeat=0):
         GPIO.output(buzzer_pin,0)
         time.sleep(pause)
 
+def led_blink():
+    bus.write_byte_data(MCP2,GPIOB,0x80)
+    time.sleep(0.1)
+    bus.write_byte_data(MCP2,GPIOB,0x00)
+    
 
+
+class cam_ctrl(object):
+    def __init__(self, ardu_serial, ardu_baud, cam_range):
+        self.ardu_serial = ardu_serial
+        self.ardu_baud = ardu_baud
+        self.cam_range = cam_range
+        self.pic_count = 0
+        self.c = None
+        
+    def connect(self, serial = None, baud = None):
+        if serial == None:
+            serial = self.ardu_serial
+        if baud == None:
+            baud = self.ardu_baud
+
+        try: 
+            print("Connecting Arduino")
+            arduino = PyCmdMessenger.ArduinoBoard(serial, baud, timeout=4)
+            commands = [
+                    ["KCommandList", ""],
+                    ["KTakepic", "bI"],
+                    ["KPower_up", "b"],
+                    ["KPower_down", "b"],
+                    ["KWake_up", ""]
+                    ]
+            # Initialize the messenger
+            self.c = PyCmdMessenger.CmdMessenger(arduino,commands)
+            print ("Arduino connecté")
+
+        except Exception as e:
+            print("Impossible de se connecter à l'Arduino")
+            print(e)
+        
+    def takePic(self, log_queue, cam = None):
+        if cam == None:
+            cam = self.cam_range
+            
+        #TODO ajouter un retard si le délai entre le déclenchement précédent
+        # et le nouveau est trop court.
+        timestamp=time.time()
+        self.c.send("KTakepic", cam, self.pic_count +1)
+        pic_return = self.c.receive(arg_formats="bLI")
+        #print(pic_return)
+        if (cam ^ pic_return[1][0]) != 0:
+            beep(0.4, 0.1, 2)
+            status="cam error"
+        else:
+            led_blink()
+            status="ok"
+            
+        #version avec datetime    
+        print(pic_return[0], pic_return[1][1:3], bin(pic_return[1][0])[2:].zfill(8), datetime.datetime.fromtimestamp(pic_return[2]).strftime('%H:%M:%S.%f')[:-3])
+        #version avec time.gmtime
+        #print(pic_return[0], pic_return[1][1:3], bin(pic_return[1][0])[2:].zfill(8), time.gmtime(pic_return[2]))
+
+        log_queue.put(str(timestamp) + "," + str(pic_return) + "," + str(bin(cam)) + "," + status + "\n")
+        
+        
+        self.pic_count += 1
+        return pic_return
+        
+    def power_up(self, cam=None):
+        if cam == None:
+            cam = self.cam_range
+
+        self.c.send("KPower_up", cam)
+        time.sleep(6)
+        start_return = self.c.receive(arg_formats="b")
+        logfile.write(str(start_return) + "\n")
+        print(start_return)
+
+    def power_down(self, cam=None):
+        if cam == None:
+            cam = self.cam_range
+            
+        self.c.send("KPower_down", cam)
+        down_return=self.c.receive()
+        logfile.write(str(down_return) + "\n")
+        return self.c.receive()
 
 # Initialize an ArduinoBoard instance.  This is where you specify baud rate and
 # serial timeout.  If you are using a non ATmega328 board, you might also need
 # to set the data sizes (bytes for integers, longs, floats, and doubles). 
+
+
+
+"""
 try: 
     arduino = PyCmdMessenger.ArduinoBoard("/dev/ttyACM0",baud_rate=115200, timeout=4)
     commands = [
@@ -445,7 +630,7 @@ except:
 
 # List of command names (and formats for their associated arguments). These must
 # be in the same order as in the sketch.
-
+"""
 def takePic(cam, log_queue, pic_id=1):
     #TODO ajouter un retard si le délai entre le déclenchement précédent
     # et le nouveau est trop court.
@@ -504,6 +689,7 @@ def power_down(cam=0b00000001):
     logfile.write(str(down_return) + "\n")
     return c.receive()
 
+
 def start_gnss_log():
     subprocess.call(["gpspipe -d -R -o ~/Documents/Sessions_V4MPOD/`date +%Y-%m-%d_%H.%M.%S`.nmea"], shell=True)
     
@@ -555,8 +741,8 @@ def exit_prog():
     global keepRunning
     #try:
     #reset interrupt on mcp    
-    bus.read_byte_data(DEVICE, INTCAPB)
-    bus.read_byte_data(DEVICE, INTCAPA)
+    bus.read_byte_data(MCP2, INTCAPB)
+    bus.read_byte_data(MCP2, INTCAPA)
     bus.close()
     stop_gnss_log()
     logfile.write("Exiting" + "\n")
@@ -629,11 +815,11 @@ def menu_next_line():
         None
 
 
-menuA = [[{"Name":"Take Pic", "Func":"takePic", "Param":"cam_range, logqueue"},
-{"Name":"Power up Cams", "Func":"power_up", "Param":"cam_range"},
- {"Name":"Power down Cams", "Func":"power_down", "Param":"cam_range"},
- {"Name":"Start TimeLapse", "Func":"start_Timelapse", "Param":""},
- {"Name":"Stop TimeLapse", "Func":"stop_Timelapse", "Param":""},
+menuA = [[{"Name":"Take Pic", "Func":"mycams.takePic", "Param":"logqueue"},
+{"Name":"Power up Cams", "Func":"mycams.power_up", "Param":"cam_range"},
+ {"Name":"Power down Cams", "Func":"mycams.power_down", "Param":"cam_range"},
+ {"Name":"Start TimeLapse", "Func":"shutter.resume", "Param":""},
+ {"Name":"Stop TimeLapse", "Func":"shutter.pause", "Param":""},
  {"Name":"Start cam log", "Func":"logfile=open_file", "Param":""},
  {"Name":"Stop Gnss log", "Func":"stop_gnss_log", "Param":""},
  {"Name":"GNSS Info", "Func":"gnss_localization", "Param":""},
@@ -656,7 +842,7 @@ keepRunning=True
 flushthread = None
 timelapsethread = None
 Timelapse = False
-pic_count = 0
+
 logqueue=Queue(maxsize=0)
 back=menu.create_blanck_img()
 img_menu_top = menu.create_full_img(menuA[0])
@@ -664,11 +850,18 @@ current_img=menu.select_line(img_menu_top, back, 1, disp)
 start_gnss_log()
 logfile=open_file()
 
+mybike = speedometer(0.35, 1, hall_pulse_queue)
+qq = Queue()
+shutter = shutter_ctrl(qq, mybike, time_interval = 1.5, mode = "time")
+shutter.start()
+mycams = cam_ctrl("/dev/ttyACM0", 115200, 0b00001111)
+mycams.connect()
+
 
 # Loop until user presses CTRL-C
 
-
 while keepRunning:
+    time.sleep(0.01)
     if Keypressed:
         handleKeyPress()
     if keyDown:
@@ -684,7 +877,12 @@ while keepRunning:
         exec(menuA[0][menuA[-2][0]]["Func"] + "(" + menuA[0][menuA[-2][0]]["Param"] +")")
         print("exec done")
 
-exit_prog()
-sys.exit()
+
+
+print("end of script")
+
+#exit_prog()
+#sys.exit()
+#TODO ajouter un GPIO.cleanup() à la fermeture du script
 
   
