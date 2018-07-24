@@ -9,14 +9,21 @@ import subprocess
 import gpsd
 import threading
 
-import Adafruit_Nokia_LCD as LCD
-import Adafruit_GPIO.SPI as SPI
-import lcd_menu as menu
-
 from queue import Queue
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
+
+#import Adafruit_Nokia_LCD as LCD
+#import Adafruit_GPIO.SPI as SPI
+from luma.core.interface.serial import spi
+from luma.core.render import canvas
+from luma.lcd.device import pcd8544
+import lcd_menu as menu
+serial = spi(port=0, device=0, gpio_DC=23, gpio_RST=24)
+disp = pcd8544(serial, rotate=2, contrast=50)
+
+
 
 cam_range=0b00001111
 
@@ -40,11 +47,7 @@ buzzer_pin = 22
 GPIO.setup(buzzer_pin, GPIO.OUT)
 
 
-# Raspberry Pi hardware SPI config:
-DC = 23
-RST = 24
-SPI_PORT = 0
-SPI_DEVICE = 0
+
  
 #bus = smbus.SMBus(0)  # Rev 1 Pi uses 0
 bus = smbus.SMBus(1) # Rev 2 Pi uses 1
@@ -454,7 +457,7 @@ disp = LCD.PCD8544(DC, RST, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=20
 #disp = LCD.PCD8544(DC, RST, SCLK, DIN, CS)
 
 # Initialize library.
-disp.begin(contrast=50)
+#disp.begin(contrast=50)
 
 # Clear display.
 disp.clear()
