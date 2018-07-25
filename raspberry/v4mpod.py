@@ -183,7 +183,7 @@ def hall_callback(hall_pin):
   hall_pulse_queue.put(time.time())
   print('Edge detected on pin %s' %hall_pin)
   #temp
-  time.sleep(0.5)
+  #time.sleep(0.5)
   bus.read_byte_data(MCP1, INTCAPA)
   bus.read_byte_data(MCP1, INTCAPB)
  
@@ -206,7 +206,7 @@ bus.read_byte_data(MCP1, INTCAPB)
 
 class shutter_ctrl(threading.Thread):
     """To send shutter to the cameras"""
-    def __init__(self, queue, speed_obj, distance_interval = 0, time_interval = 0, mode = "distance", rate = 0.01):
+    def __init__(self, queue, speed_obj, distance_interval = 0, time_interval = 0, mode = "distance", rate = 0):
         """
         param: queue: A queue.Queue object
         param: time_interval: the time interval between each picture in time-base mode
@@ -226,11 +226,13 @@ class shutter_ctrl(threading.Thread):
         self.prev_time = time.time()
         self.prev_sht_rtn = time.time()
         self.shutter_count = 0
+        self.cam_range = 15
         self._pause = True
         self._stop = False
         
     def run(self):
         while not self._stop:
+            
             while not self._pause:
                 if self.mode == "time":
                     self.time_base()
@@ -243,11 +245,15 @@ class shutter_ctrl(threading.Thread):
         
         if self.prev_time + self.time_interval <= time.time():
             self.prev_time = time.time()
-            print("shutter: {0}".format(self.shutter_count))
-            mycams.takePic(logqueue, cam_range)
-            
+            print("shutter: {0} for cams {1:b}".format(self.shutter_count, self.cam_range))
+            pic_return = mycams.takePic(logqueue, self.cam_range)
             self.shutter_count +=1
-            self.prev_sht_rtn = time.time()
+            # retardement du prochain déclenchement si la réponse des
+            # caméras est trop lente. Il faut ajouter 1 seconde au temps
+            # de réponse.
+            answer_delay = pic_return[1][1]/1000
+            if answer_delay + 1 > self.time_interval:
+                self.prev_time += (answer_delay + 1) - self.time_interval
             
             #TODO tenir compte d'un temps minimum entre la réponse et 
             # le prochain déclenchement.
@@ -261,7 +267,7 @@ class shutter_ctrl(threading.Thread):
             
         except ZeroDivisionError:
             # when speed is 0, add a very long time
-            time_interval = time.time() + 3600 
+            time_interval = time.time() + 360000
         
         self.time_interval = time_interval
         #control de l'augmentation de la distance.
@@ -273,6 +279,7 @@ class shutter_ctrl(threading.Thread):
         # du vélo (speed = 0), arrive un peu trop vite.
             
     def stop(self):
+        self._pause = True
         self._stop = True
             
     def pause(self):
@@ -532,6 +539,7 @@ class cam_ctrl(object):
         self.ardu_baud = ardu_baud
         self.cam_range = cam_range
         self.pic_count = 0
+        self.shutter_error = 0
         self.c = None
         
     def connect(self, serial = None, baud = None):
@@ -569,6 +577,7 @@ class cam_ctrl(object):
         pic_return = self.c.receive(arg_formats="bLI")
         #print(pic_return)
         if (cam ^ pic_return[1][0]) != 0:
+            self.shutter_error += 1
             beep(0.4, 0.1, 2)
             status="cam error"
         else:
@@ -576,6 +585,7 @@ class cam_ctrl(object):
             status="ok"
             
         #version avec datetime    
+        
         print(pic_return[0], pic_return[1][1:3], bin(pic_return[1][0])[2:].zfill(8), datetime.datetime.fromtimestamp(pic_return[2]).strftime('%H:%M:%S.%f')[:-3])
         #version avec time.gmtime
         #print(pic_return[0], pic_return[1][1:3], bin(pic_return[1][0])[2:].zfill(8), time.gmtime(pic_return[2]))
@@ -850,7 +860,8 @@ current_img=menu.select_line(img_menu_top, back, 1, disp)
 start_gnss_log()
 logfile=open_file()
 
-mybike = speedometer(0.35, 1, hall_pulse_queue)
+#mybike = speedometer(0.35, 1, hall_pulse_queue)
+mybike = None
 qq = Queue()
 shutter = shutter_ctrl(qq, mybike, time_interval = 1.5, mode = "time")
 shutter.start()
@@ -861,7 +872,7 @@ mycams.connect()
 # Loop until user presses CTRL-C
 
 while keepRunning:
-    time.sleep(0.01)
+    time.sleep(0.05)
     if Keypressed:
         handleKeyPress()
     if keyDown:
