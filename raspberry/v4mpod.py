@@ -451,7 +451,7 @@ def handleKeyPress():
       
 
 # Hardware SPI usage:
-disp = LCD.PCD8544(DC, RST, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=2000000))
+#disp = LCD.PCD8544(DC, RST, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=2000000))
 
 # Software SPI usage (defaults to bit-bang SPI interface):
 #disp = LCD.PCD8544(DC, RST, SCLK, DIN, CS)
@@ -461,20 +461,20 @@ disp = LCD.PCD8544(DC, RST, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=20
 
 # Clear display.
 disp.clear()
-disp.display()
+#disp.display()
 
 
 
 def splash_boot(pause_time=5):
     # Create blank image for drawing.
     # Make sure to create image with mode '1' for 1-bit color.
-    boot = Image.new('1', (LCD.LCDWIDTH, LCD.LCDHEIGHT))
+    boot = Image.new('1', (disp.width, disp.height))
     
     # Get drawing object to draw on image.
     draw = ImageDraw.Draw(boot)
     
     # Draw a white filled box to clear the image.
-    draw.rectangle((0,0,LCD.LCDWIDTH,LCD.LCDHEIGHT), outline=255, fill=255)
+    draw.rectangle((0,0,disp.width, disp.height), outline=255, fill=255)
     
     # Load default font.
     font = ImageFont.load_default()
@@ -489,18 +489,18 @@ def splash_boot(pause_time=5):
     
     
     # Display image.
-    disp.image(boot)
-    disp.display()  
+    #disp.image(boot)
+    disp.display(boot)  
     
     time.sleep(pause_time)
 
 # Clear display.
 disp.clear()
-disp.display()
+#disp.display()
 
 def lcd_write_text(lcdtext, timeout=None):
     disp.clear()
-    disp.display()
+    #disp.display()
     image = Image.new('1', (LCD.LCDWIDTH, LCD.LCDHEIGHT))
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default()
@@ -508,12 +508,12 @@ def lcd_write_text(lcdtext, timeout=None):
     
     # Write some text.
     draw.text((0,8), lcdtext, font=font)
-    disp.image(image)
-    disp.display()
+    #disp.image(image)
+    disp.display(image)
     if timeout:
         time.sleep(timeout)
         disp.clear()
-        disp.display()
+        #disp.display()
 
 def beep(duration=0.2, pause=0.2, repeat=0):
     for rpt in range(repeat +1):
@@ -836,19 +836,19 @@ menuA = [[{"Name":"Take Pic", "Func":"mycams.takePic", "Param":"logqueue"},
 # Main
 
 splash_boot()
-gnss_fix()
+#gnss_fix()
 keyDown = False
 keyUp = False
 keySelect = False
 keyBack = False
-keepRunning=True
+keepRunning=False
 flushthread = None
 timelapsethread = None
 Timelapse = False
 
 logqueue=Queue(maxsize=0)
-back=menu.create_blanck_img()
-img_menu_top = menu.create_full_img(menuA[0])
+back=menu.create_blanck_img(disp)
+img_menu_top = menu.create_full_img(disp, menuA[0])
 current_img=menu.select_line(img_menu_top, back, 1, disp)
 start_gnss_log()
 logfile=open_file()
