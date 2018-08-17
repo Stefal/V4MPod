@@ -69,8 +69,12 @@ def interpolate_timestamp(image_list, delta):
         #ajouter 1 seconde à image[gap0]
         image_list[gap0] = (image_list[gap0][0], (image_list[gap0][1] + datetime.timedelta(seconds=1)))
  
+    #debug
+    #if delta < 1:
+     #   import pdb; pdb.set_trace()
+        
     for i,image in enumerate(image_list):
-        new_fulltime= image[1] + datetime.timedelta(seconds=(i*(delta-1)))
+        new_fulltime= image_list[0][1] + datetime.timedelta(seconds=(i*delta))
         new_datetimeoriginal= new_fulltime.replace(microsecond=0)
         new_subsectimeoriginal="%.6d"%(new_fulltime.microsecond)
         image_with_new_timestamp_list.append((image[0],new_datetimeoriginal, new_subsectimeoriginal))
@@ -84,7 +88,7 @@ def write_metadata(image_list):
     for image in image_list:
         metadata = pyexiv2.ImageMetadata(image[0])
         metadata.read()
-        #metadata["Exif.Photo.DateTimeOriginal"] = image[1]
+        metadata["Exif.Photo.DateTimeOriginal"] = image[1]
         metadata["Exif.Photo.SubSecTimeOriginal"] = image[2]
         metadata.write()
         print('Writing new timestamp to ', image[0])
@@ -118,7 +122,7 @@ def main(path):
         print("Le delai corrige est :", corrected_interval)
         
         print('on appelle la fonction')
-        big_pic_delta(newlist[:big_gap_index],corrected_interval, os.getcwd()+'/big_delta')
+        big_pic_delta(newlist[:big_gap_index],corrected_interval, path + '/big_delta')
         #remove these images from the list
         del newlist[:big_gap_index]
 
