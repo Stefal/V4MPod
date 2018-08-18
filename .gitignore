@@ -216,3 +216,5 @@ pip-log.txt
 .mr.developer.cfg
 *.pyc
 *.jpg
+scripts/intertime.py
+scripts/intertime.py
