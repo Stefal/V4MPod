@@ -110,7 +110,7 @@ def main(path):
     for i,j in enumerate(newlist):
         if (j[2]>2 and i > 0):
             big_gap_list.append((i,j))
-            print("gros gap:", i, j[2])
+            print("gros gap:", i, j[1], j[2])
             #print("Le delai moyen après big gap est :", newlist[len(newlist)
 
     if len(big_gap_list) > 1:
@@ -121,7 +121,7 @@ def main(path):
         corrected_interval = ((newlist[len(newlist)-1][1]-newlist[big_gap_index][1]).total_seconds()+1)/(len(newlist) - big_gap_index)
         print("Le delai corrige est :", corrected_interval)
         
-        print('on appelle la fonction')
+        print('on appelle la fonction de déplacement des fichiers')
         big_pic_delta(newlist[:big_gap_index],corrected_interval, path + '/big_delta')
         #remove these images from the list
         del newlist[:big_gap_index]
