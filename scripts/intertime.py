@@ -92,7 +92,24 @@ def write_metadata(image_list):
         metadata["Exif.Photo.SubSecTimeOriginal"] = image[2]
         metadata.write()
         print('Writing new timestamp to ', image[0])
-          
+
+def generate_group(a_list):
+    group_list = []
+    for i,j in enumerate(a_list):
+        if j[2]<3:
+            group_list.append(j)
+            
+        elif (j[2]>2 and i > 0):
+            #big_gap_list.append((i,j))
+            print("gros gap:", i, j[0], j[2])
+            if len(group_list) > 1:
+                yield group_list
+                group_list = []
+            else:
+                group_list = []
+            
+    
+        
 def main(path):
     images_list=list_images(path)
     print("le chemin est ", path)
@@ -106,58 +123,45 @@ def main(path):
     print("Le delai moyen est :", ((newlist[len(newlist)-1][1]-newlist[0][1]).total_seconds()+1)/len(newlist))
 
     #print_list(newlist)
-    big_gap_list=[]
-    for i,j in enumerate(newlist):
-        if (j[2]>2 and i > 0):
-            big_gap_list.append((i,j))
-            print("gros gap:", i, j[0], j[2])
-            #print("Le delai moyen après big gap est :", newlist[len(newlist)
-
-    if len(big_gap_list) > 1:
-        print("WARNING !!!!!!!!!!!!! There is another big gap at ", i, j[0], "This script can't handle it. Exiting...")
-        sys.exit()
-    elif len(big_gap_list)==1:
-        big_gap_index = big_gap_list[0][0]
-        corrected_interval = ((newlist[len(newlist)-1][1]-newlist[big_gap_index][1]).total_seconds()+1)/(len(newlist) - big_gap_index)
-        print("Le delai corrige est :", corrected_interval)
+    
+    #Création du générateur
+    for group in generate_group(newlist):
+        #import pdb; pdb.set_trace()
+        gap_list=[(0,group[0][0],group[0][1])]
         
-        print('on appelle la fonction de déplacement des fichiers')
-        big_pic_delta(newlist[:big_gap_index],corrected_interval, path + '/big_delta')
-        #remove these images from the list
-        del newlist[:big_gap_index]
+        print("NOUVEAU GROUPE")
+        #print_list(group)
+        for i,j in enumerate(group):
+            #print i,j
+            
 
-    print_list(newlist)
+            if(j[2]==2 and i > 0):
+                gap_list.append((i,j[0],j[1]))
+                #print_list(newlist)
+                #print("gap de 2 secondes : ", i, j[2])
+                #corrected_interval = ((newlist[i][1]-newlist[0][1]).total_seconds())/(len(newlist[:i]))
+                #print("l'interval est de : ",newlist[i][1], '-', newlist[0][1], 'divise par ',(len(newlist[:i])))
+                #print("l'interval est de : ", ((newlist[i][1]-newlist[0][1]).total_seconds()), 'divise par', (len(newlist[:i])))
+                #print("l'interval est de : ", corrected_interval)
 
-    gap_list=[(0,newlist[0][0],newlist[0][1])]
-    for i,j in enumerate(newlist):
-        #print i,j
+        for i, gap in enumerate (gap_list):
+            pic_index_start = gap_list[i-1][0]
+            pic_index_end = gap_list[i][0]
+            pic_timestamp_start = gap_list[i-1][2]
+            pic_timestamp_end = gap_list[i][2]
+            
+            if i == 0:
+                None #Nothing to do for the first tuple...yes it's ugly... try for i, gap in enumerate (gap_list[1:]):
+            else:
+                corrected_interval = (pic_timestamp_end-pic_timestamp_start).total_seconds()/(pic_index_end - pic_index_start)
+                print("Interval est de : ", (pic_timestamp_end-pic_timestamp_start).total_seconds(), "divise par ", (pic_index_end - pic_index_start))
+                print("Interval est de : ", corrected_interval)
+                # La dernière tranche n'est pas encore gérée,(celle après le dernier gap de 2)
+                print("je tente d'envoyer interpolate_timestamp (newlist[", pic_index_start, pic_index_end, corrected_interval)
+                #print("j'ai commente la reecriture")
+                interpolate_timestamp(group[pic_index_start:pic_index_end], corrected_interval)
 
-        if(j[2]==2 and i > 0):
-            gap_list.append((i,j[0],j[1]))
-            #print_list(newlist)
-            #print("gap de 2 secondes : ", i, j[2])
-            #corrected_interval = ((newlist[i][1]-newlist[0][1]).total_seconds())/(len(newlist[:i]))
-            #print("l'interval est de : ",newlist[i][1], '-', newlist[0][1], 'divise par ',(len(newlist[:i])))
-            #print("l'interval est de : ", ((newlist[i][1]-newlist[0][1]).total_seconds()), 'divise par', (len(newlist[:i])))
-            #print("l'interval est de : ", corrected_interval)
-
-    for i, gap in enumerate (gap_list):
-        pic_index_start = gap_list[i-1][0]
-        pic_index_end = gap_list[i][0]
-        pic_timestamp_start = gap_list[i-1][2]
-        pic_timestamp_end = gap_list[i][2]
-        
-        if i == 0:
-            None #Nothing to do for the first tuple...yes it's ugly... try for i, gap in enumerate (gap_list[1:]):
-        else:
-            corrected_interval = (pic_timestamp_end-pic_timestamp_start).total_seconds()/(pic_index_end - pic_index_start)
-            print("Interval est de : ", (pic_timestamp_end-pic_timestamp_start).total_seconds(), "divise par ", (pic_index_end - pic_index_start))
-            print("Interval est de : ", corrected_interval)
-            # La dernière tranche n'est pas encore gérée,(celle après le dernier gap de 2)
-            print("je tente d'envoyer interpolate_timestamp (newlist[", pic_index_start, pic_index_end, corrected_interval)
-            interpolate_timestamp(newlist[pic_index_start:pic_index_end], corrected_interval)
-
-        
+            
             
             
 
