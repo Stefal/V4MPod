@@ -110,7 +110,7 @@ def main(path):
     for i,j in enumerate(newlist):
         if (j[2]>2 and i > 0):
             big_gap_list.append((i,j))
-            print("gros gap:", i, j[1], j[2])
+            print("gros gap:", i, j[0], j[2])
             #print("Le delai moyen après big gap est :", newlist[len(newlist)
 
     if len(big_gap_list) > 1:
