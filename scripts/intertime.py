@@ -107,6 +107,8 @@ def generate_group(a_list):
                 group_list = []
             else:
                 group_list = []
+                
+    yield group_list
             
     
         
