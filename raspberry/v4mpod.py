@@ -21,7 +21,7 @@ from luma.core.render import canvas
 from luma.lcd.device import pcd8544
 import lcd_menu as menu
 serial = spi(port=0, device=0, gpio_DC=23, gpio_RST=24)
-disp = pcd8544(serial, rotate=2, contrast=50)
+disp = pcd8544(serial, rotate=2, contrast=40)
 
 
 
