@@ -134,7 +134,7 @@ bus.write_byte_data(MCP1, INTCONA, 0x00)
 #bus.write_byte_data(MCP1, INTCONA, 0xFF)
 
 #Enable interrupt on port A
-bus.write_byte_data(MCP1, GPINTENA, 0x01)
+bus.write_byte_data(MCP1, GPINTENA, 0xFF)
 
 #Enable interrupt on port B
 bus.write_byte_data(MCP1, GPINTENB, 0x03)
@@ -181,17 +181,17 @@ hall_pulse_queue = Queue()
 
 def hall_callback(hall_pin):
   hall_pulse_queue.put(time.time())
-  print('Edge detected on pin %s' %hall_pin)
+  print('Edge detected on MCP1 Hall sensor pin %s' %hall_pin)
   #temp
   #time.sleep(0.5)
   bus.read_byte_data(MCP1, INTCAPA)
-  bus.read_byte_data(MCP1, INTCAPB)
+  #bus.read_byte_data(MCP1, INTCAPB)
  
 
 #GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
 
 # add rising edge detection on a channel
-#GPIO.add_event_detect(mcp1_inta_pin, GPIO.RISING, callback=hall_callback) 
+GPIO.add_event_detect(mcp1_inta_pin, GPIO.RISING, callback=hall_callback)
 #reset interrupt on mcp, or an already active interrupt 
 #would disable a new one, rendering the mcp unusable.
 #bus.read_byte_data(MCP1, INTCAPA) 
@@ -842,8 +842,8 @@ menuA = [[{"Name":"Take Pic", "Func":"mycams.takePic", "Param":"logqueue"},
 
 # Main
 
-splash_boot()
-gnss_fix()
+#splash_boot()
+#gnss_fix()
 keyDown = False
 keyUp = False
 keySelect = False
