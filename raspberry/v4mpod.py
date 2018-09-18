@@ -106,7 +106,7 @@ bus.write_byte_data(MCP2, GPINTENB, 0xFF)
 
 # For the MCP1 :
 
-# Set all GPA pins as inputs by setting
+# Set all GPIOA pins as inputs by setting
 #  bits of IODIRA register to 1
 bus.write_byte_data(MCP1,IODIRA,0xFF)
  

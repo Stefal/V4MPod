@@ -73,11 +73,11 @@ OLLATB =  0x15
 bus.write_byte_data(MCP1,IODIRA,0x01)
  
 
-# Set GPIOA polarity to normal
-bus.write_byte_data(MCP1, IOPOLA, 0x00)
+# Set GPIOA pin 1 polarity to inverted
+bus.write_byte_data(MCP1, IOPOLA, 0x01)
 
-# Enable pull up resistor on GPIOA
-#bus.write_byte_data(MCP1, GPPUA, 0xFF)
+# Enable pull up resistor on GPIOA input 1
+#bus.write_byte_data(MCP1, GPPUA, 0x01)
 
 # no mirror interrupts, disable sequential mode, active HIGH
 bus.write_byte_data(MCP1, IOCON, 0b00100010)
@@ -113,11 +113,12 @@ hall_pulse_queue = Queue()
 
 def hall_callback(hall_pin):
   
-  print('Edge detected on MCP1 Hall sensor pin %s' %hall_pin)
+  #print('Edge detected on MCP1 Hall sensor pin %s' %hall_pin)
   MCP1_status = bus.read_byte_data(MCP1, INTCAPA)
-  if MCP1_status & 0b0 == 0:
+  #print("MCP1 pins status: ", MCP1_status)
+  if MCP1_status & 0b1 == 1:
     hall_pulse_queue.put(time.time())
-    print("MCP1 pins status: ", bin(MCP1_status))
+    #print("Magnet detected! MCP1 pins status: ", bin(MCP1_status))
   #temp
   #time.sleep(0.5)
   bus.read_byte_data(MCP1, INTCAPA)
@@ -129,6 +130,61 @@ GPIO.add_event_detect(mcp1_inta_pin, GPIO.RISING, callback=hall_callback)
 #would disable a new one, rendering the mcp unusable.
 #bus.read_byte_data(MCP1, INTCAPA) 
 
+class speedometer(threading.Thread):
+    """Speed and distance class, which run in a separate thread
+    This class read the pulses from a sensor on a wheel, to compute speed and
+    distance.
+    Each pulse should be a timestamp and is in a queue.
+    """
+    def __init__(self, wheel_radius, magnet, queue, rate=0.3):
+        """init the class with these parameters
+        :param wheel_radius: the wheel radius, in meters
+        :param magnet: how many magnets are on the wheel
+        :param queue: The queue the class should get pulses timestamps from
+        :param rate: Refresh speed rate (default to 10 milliseconds)
+        """
+        threading.Thread.__init__(self)
+        self.pulse_distance = wheel_radius*2*3.1415 / magnet
+        self.queue = queue
+        self.prev_time = time.time()
+        self.total_distance = 0
+        self.speed = 0
+        self.rate = rate
+        self._stop = False
+    
+    def run(self):
+        while not self._stop:
+            self.read_queue()
+            time.sleep(self.rate)
+        
+    def read_queue(self):
+                    
+        for pulse_count in range(self.queue.qsize() + 1):
+            try:
+                pulse_timestamp = self.queue.get(timeout = 2)
+                elapsed_time = pulse_timestamp - self.prev_time
+                self.speed = self.pulse_distance / elapsed_time
+                self.total_distance += self.pulse_distance
+                self.prev_time = pulse_timestamp
+                
+            except queue.Empty:
+                self.speed = 0
+            except Exception as e:
+                print("Exception: {}".format(e))
+            
+            finally:
+                pass
+                print("Distance : {0} - Vitesse : {1:.2f}m/s".format(self.total_distance, self.speed))
+        # Revéfifier la pertinence de cette solution dans les différents cas :
+        # Il faut tenir compte de la vitesse de la rotation de la roue
+        # ainsi que de la fréquence d'appel de cette méthode
+        # Il y a plusieurs cas "délicats" :
+        # la fréquence d'appel de la méthode est inférieure à celle de l'arrivée des pulses
+        # la fréquence d'appel de la méthode est supérieure à celle de l'arrivée des pulses
+ 
+    def stop(self):
+        self._stop = True
 
 
-
+mybike = speedometer(0.35, 1, hall_pulse_queue)
+mybike.start()
