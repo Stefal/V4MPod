@@ -65,8 +65,8 @@ IOCON =   0x0A   # IO Configuration: bank/mirror/seqop/disslw/haen/odr/intpol/no
 #IOCON 0x0B  // same as 0x0A
 GPPUA =   0x0C   # Pull-up resistor (0 = disabled, 1 = enabled)
 GPPUB =   0x0D
-INFTFA =  0x0E   # Interrupt flag (read only) : (0 = no interrupt, 1 = pin caused interrupt)
-INFTFB =  0x0F
+INTFA =  0x0E   # Interrupt flag (read only) : (0 = no interrupt, 1 = pin caused interrupt)
+INTFB =  0x0F
 INTCAPA = 0x10   # Interrupt capture (read only) : value of GPIO at time of last interrupt
 INTCAPB = 0x11
 GPIOA =   0x12   # Port value. Write to change, read to obtain value

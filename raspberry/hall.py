@@ -54,8 +54,8 @@ IOCON =   0x0A   # IO Configuration: bank/mirror/seqop/disslw/haen/odr/intpol/no
 #IOCON 0x0B  // same as 0x0A
 GPPUA =   0x0C   # Pull-up resistor (0 = disabled, 1 = enabled)
 GPPUB =   0x0D
-INFTFA =  0x0E   # Interrupt flag (read only) : (0 = no interrupt, 1 = pin caused interrupt)
-INFTFB =  0x0F
+INTFA =  0x0E   # Interrupt flag (read only) : (0 = no interrupt, 1 = pin caused interrupt)
+INTFB =  0x0F
 INTCAPA = 0x10   # Interrupt capture (read only) : value of GPIO at time of last interrupt
 INTCAPB = 0x11
 GPIOA =   0x12   # Port value. Write to change, read to obtain value
@@ -73,7 +73,11 @@ OLLATB =  0x15
 bus.write_byte_data(MCP1,IODIRA,0x01)
  
 
+<<<<<<< HEAD
 # Set GPIOA pin 1 polarity to inverted
+=======
+# Set GPIOA polarity to normal except for input 1
+>>>>>>> 41102f372f60422a7ad0abacb5f3873a2876a499
 bus.write_byte_data(MCP1, IOPOLA, 0x01)
 
 # Enable pull up resistor on GPIOA input 1
@@ -112,17 +116,21 @@ for MyData in range(1,16):
 hall_pulse_queue = Queue()
 
 def hall_callback(hall_pin):
-  
-  #print('Edge detected on MCP1 Hall sensor pin %s' %hall_pin)
-  MCP1_status = bus.read_byte_data(MCP1, INTCAPA)
-  #print("MCP1 pins status: ", MCP1_status)
-  if MCP1_status & 0b1 == 1:
-    hall_pulse_queue.put(time.time())
-    #print("Magnet detected! MCP1 pins status: ", bin(MCP1_status))
-  #temp
-  #time.sleep(0.5)
-  bus.read_byte_data(MCP1, INTCAPA)
-  #bus.read_byte_data(MCP1, INTCAPB)
+    #WARNING: If several input pins can create an interrupt
+    #you should check which one with INTFx, or you could get false positive interrupt
+
+    #print('Edge detected on MCP1 Hall sensor pin %s' %hall_pin)
+    MCP1_status = bus.read_byte_data(MCP1, INTCAPA)
+    #print("MCP1 pins status: ", MCP1_status)
+    print('Edge detected on MCP1 Hall sensor pin %s' %hall_pin)
+    MCP1_status = bus.read_byte_data(MCP1, INTCAPA)
+    if MCP1_status & 0b1 == 1:
+        hall_pulse_queue.put(time.time())
+        #print("Magnet detected! MCP1 pins status: ", bin(MCP1_status))
+        #temp
+        #time.sleep(0.5)
+    bus.read_byte_data(MCP1, INTCAPA)
+    #bus.read_byte_data(MCP1, INTCAPB)
  
 # add rising edge detection on a channel
 GPIO.add_event_detect(mcp1_inta_pin, GPIO.RISING, callback=hall_callback)
