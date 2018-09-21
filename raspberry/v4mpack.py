@@ -13,7 +13,7 @@ import Adafruit_Nokia_LCD as LCD
 import Adafruit_GPIO.SPI as SPI
 import lcd_menu as menu
 
-import Queue
+import queue
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
@@ -22,6 +22,7 @@ cam_range=0b00001111
 
 # Set Rpi.GPIO to BCM mode
 GPIO.setmode(GPIO.BCM)
+GPIO.cleanup()
 
 # Channel used to receive MCP interrupts
 int_pin = 17
@@ -325,6 +326,7 @@ def takePic(cam, queue, pic_id=1):
     #print(pic_return[0], pic_return[1][1:3], bin(pic_return[1][0])[2:].zfill(8), time.gmtime(pic_return[2]))
 
     queue.put(str(timestamp) + "," + str(pic_return) + "," + str(bin(cam)) + "," + status + "\n")
+    
     global pic_count
     pic_count += 1
     return pic_return
@@ -510,12 +512,12 @@ keyDown = False
 keyUp = False
 keySelect = False
 keyBack = False
-keepRunning=False
+keepRunning=True
 flushthread = None
 timelapsethread = None
 Timelapse = False
 pic_count = 0
-logqueue=Queue(maxsize=0)
+logqueue=queue.Queue(maxsize=0)
 back=menu.create_blanck_img()
 img_menu_top = menu.create_full_img(menuA[0])
 current_img=menu.select_line(img_menu_top, back, 1, disp)
