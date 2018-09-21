@@ -13,7 +13,7 @@ import Adafruit_Nokia_LCD as LCD
 import Adafruit_GPIO.SPI as SPI
 import lcd_menu as menu
 
-from queue import Queue
+import Queue
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
