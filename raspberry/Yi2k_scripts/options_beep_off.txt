@@ -1,0 +1,8 @@
+#{"msg_id":2,"token":%s, "type":"buzzer_volume", "param":"high"}
+#{"msg_id":2,"token":%s, "type":"buzzer_volume", "param":"low"}
+{"msg_id":2,"token":%s, "type":"buzzer_volume", "param":"mute"}
+
+#line to beep the Yi
+{"msg_id":2,"token":%s, "type":"buzzer_ring", "param":"on"}
+{"msg_id":2,"token":%s, "type":"buzzer_ring", "param":"off"}
+
