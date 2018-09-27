@@ -75,11 +75,17 @@ else:
 myLocTime=strftime("%Y-%m-%d %H:%M:%S", localtime())
 start_time = time.time()
 
-#tosend = '{"msg_id":2,"token":%s, "type":"camera_clock", "param":"' %token + str(myLocTime) + '"}'
+while time.time() % 1 < 0.5 and time.time() % 1 > 0.7:
+    time.sleep(0.05)
+myLocTime = (datetime.datetime.now() + datetime.timedelta(seconds=1)).strftime("%Y-%m-%d %H:%M:%S")
 tosend1 = '{"msg_id":2,"token":%s, "type":"camera_clock", "param":"' %token1 + str(myLocTime) + '"}'
 tosend2 = '{"msg_id":2,"token":%s, "type":"camera_clock", "param":"' %token2 + str(myLocTime) + '"}'
 tosend3 = '{"msg_id":2,"token":%s, "type":"camera_clock", "param":"' %token3 + str(myLocTime) + '"}'
 tosend4 = '{"msg_id":2,"token":%s, "type":"camera_clock", "param":"' %token4 + str(myLocTime) + '"}'
+while time.time() % 1 < 0.95:
+    time.sleep(0.05)
+    
+#tosend = '{"msg_id":2,"token":%s, "type":"camera_clock", "param":"' %token + str(myLocTime) + '"}'
 
 
 #srv.send(tosend)
