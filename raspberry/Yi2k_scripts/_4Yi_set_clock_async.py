@@ -11,36 +11,42 @@ from time import localtime, strftime
 class Yi2K_telnet (object):
     def __init__ (self, cam_address, cam_port = 7878):
         self.cam_address = cam_address
-        self.cam_socket = None
+        self.cam_writer = None
+        self.cam_reader = None
         self.cam_port = cam_port
         self.cam_token = None
         self._isconnected = False
         
-    def connect(self):
-        self.cam_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.cam_socket.connect((self.cam_address, self.cam_port))
-        self.cam_socket.send('{"msg_id":257,"token":0}'.encode())
-        data = self.cam_socket.recv(512).decode()
-        while not "rval" in data:
-            time.sleep(0.1)
-            data = self.cam_socket.recv(512).decode()
+    async def connect(self):
+        self.cam_reader, self.cam_writer = await asyncio.open_connection(
+                self.cam_address, self.cam_port)
+        
+        self.cam_writer.write('{"msg_id":257,"token":0}'.encode())
+        data = await self.cam_reader.read(512).decode()
+        while 1:
+            data = await self.cam_reader.read(512).decode()
+            if "rval" in data:
+                break
+            else:
+                await asyncio.sleep(0.2)
+                
         self.cam_token = re.findall('"param": (.+) }',data)[0]
         self._isconnected = True
         
-    def set_datetime(self, a_datetime = strftime("%Y-%m-%d %H:%M:%S", localtime())):
+    async def set_datetime(self, a_datetime = strftime("%Y-%m-%d %H:%M:%S", localtime())):
         if self._isconnected:
             tosend = '{{"msg_id":2,"token":{}, "type":"camera_clock", "param":"' %self.cam_token + a_datetime + '"}'
-            self.cam_socket.send(tosend.encode())
-            self.cam_socket.recv(512)
+            self.cam_writer.write(tosend.encode())
+            await self.cam_reader.read(512).decode()
         else:
             return "Not connected"
             
-    def get_datetime(self):
+    async def get_datetime(self):
         if self._isconnected:
             tosend = '{"msg_id":3,"token":%s}' %self.cam_token
-            self.cam_socket.send(tosend.encode())
+            self.cam_writer.write(tosend.encode())
             while 1:
-                conf = self.cam_socket.recv(4096).decode()
+                conf = await self.cam_reader.read(4096).decode()
                 if "param" in conf:
                     break
             conf = conf[37:]
@@ -50,11 +56,11 @@ class Yi2K_telnet (object):
         
         
     def disconnect(self):
-        self.cam_socket.close()
+        self.cam_writer.close()
         self._isconnected = False
         
     def isconnected(self):
-        if self._isconnected = True:
+        if self._isconnected == True:
             return True
         else:
             return False
