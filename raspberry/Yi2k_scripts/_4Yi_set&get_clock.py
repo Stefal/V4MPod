@@ -133,10 +133,10 @@ conf4 = conf4[37:]
 #print type(conf)
 print(conf4[3:40])
 
-svr1.close()
-svr2.close()
-svr3.close()
-svr4.close()
+srv1.close()
+srv2.close()
+srv3.close()
+srv4.close()
 
 total_time = time.time() - start_time
 print("temps écoulé : {}".format(total_time))

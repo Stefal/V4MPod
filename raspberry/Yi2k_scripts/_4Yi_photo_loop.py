@@ -94,7 +94,7 @@ srv4.recv(512)
 #   time.sleep(2)
 #   count = count - 1
 
-svr1.close()
-svr2.close()
-svr3.close()
-svr4.close()
+srv1.close()
+srv2.close()
+srv3.close()
+srv4.close()

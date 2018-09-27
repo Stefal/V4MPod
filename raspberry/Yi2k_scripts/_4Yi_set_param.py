@@ -90,7 +90,7 @@ for line in filek:
             srv2.send(tosend2.encode())
             srv2.recv(512)
 
-svr1.close()
-svr2.close()
-svr3.close()
-svr4.close()
+srv1.close()
+srv2.close()
+srv3.close()
+srv4.close()
