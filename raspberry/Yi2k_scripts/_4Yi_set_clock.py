@@ -20,52 +20,52 @@ srv3.connect((cam3addr, cam3port))
 srv4.connect((cam4addr, cam4port))
 
 #srv.send('{"msg_id":257,"token":0}')
-srv1.send('{"msg_id":257,"token":0}')
-srv2.send('{"msg_id":257,"token":0}')
-srv3.send('{"msg_id":257,"token":0}')
-srv4.send('{"msg_id":257,"token":0}')
+srv1.send('{"msg_id":257,"token":0}'.encode())
+srv2.send('{"msg_id":257,"token":0}'.encode())
+srv3.send('{"msg_id":257,"token":0}'.encode())
+srv4.send('{"msg_id":257,"token":0}'.encode())
 """
 data = srv.recv(512)
 if "rval" in data:
-	token = re.findall('"param": (.+) }',data)[0]	
+    token = re.findall('"param": (.+) }',data)[0]   
 else:
-	data = srv.recv(512)
-	if "rval" in data:
-		token = re.findall('"param": (.+) }',data)[0]	
+    data = srv.recv(512)
+    if "rval" in data:
+        token = re.findall('"param": (.+) }',data)[0]   
 
 """
-data1 = srv1.recv(512)
+data1 = srv1.recv(512).decode()
 if "rval" in data1:
-	token1 = re.findall('"param": (.+) }',data1)[0]	
+    token1 = re.findall('"param": (.+) }',data1)[0] 
 else:
-	data1 = srv1.recv(512)
-	if "rval" in data1:
-		token1 = re.findall('"param": (.+) }',data1)[0]	
+    data1 = srv1.recv(512).decode()
+    if "rval" in data1:
+        token1 = re.findall('"param": (.+) }',data1)[0] 
 
 
-data2 = srv2.recv(512)
+data2 = srv2.recv(512).decode()
 if "rval" in data2:
-	token2 = re.findall('"param": (.+) }',data2)[0]	
+    token2 = re.findall('"param": (.+) }',data2)[0] 
 else:
-	data2 = srv2.recv(512)
-	if "rval" in data2:
-		token2 = re.findall('"param": (.+) }',data2)[0]	
+    data2 = srv2.recv(512).decode()
+    if "rval" in data2:
+        token2 = re.findall('"param": (.+) }',data2)[0] 
 
-data3 = srv3.recv(512)
+data3 = srv3.recv(512).decode()
 if "rval" in data3:
-	token3 = re.findall('"param": (.+) }',data3)[0]	
+    token3 = re.findall('"param": (.+) }',data3)[0] 
 else:
-	data3 = srv3.recv(512)
-	if "rval" in data3:
-		token3 = re.findall('"param": (.+) }',data3)[0]	
+    data3 = srv3.recv(512).decode()
+    if "rval" in data3:
+        token3 = re.findall('"param": (.+) }',data3)[0] 
 
-data4 = srv4.recv(512)
+data4 = srv4.recv(512).decode()
 if "rval" in data4:
-	token4 = re.findall('"param": (.+) }',data4)[0]	
+    token4 = re.findall('"param": (.+) }',data4)[0] 
 else:
-	data4 = srv4.recv(512)
-	if "rval" in data4:
-		token4 = re.findall('"param": (.+) }',data4)[0]	
+    data4 = srv4.recv(512).decode()
+    if "rval" in data4:
+        token4 = re.findall('"param": (.+) }',data4)[0] 
 
 
 # Ca fonctionne :
@@ -73,10 +73,10 @@ else:
 #srv.send(tosend)
 #srv.recv(512)
 myLocTime=strftime("%Y-%m-%d %H:%M:%S", localtime())
+start_time = time.time()
 
 #tosend = '{"msg_id":2,"token":%s, "type":"camera_clock", "param":"' %token + str(myLocTime) + '"}'
 tosend1 = '{"msg_id":2,"token":%s, "type":"camera_clock", "param":"' %token1 + str(myLocTime) + '"}'
-
 tosend2 = '{"msg_id":2,"token":%s, "type":"camera_clock", "param":"' %token2 + str(myLocTime) + '"}'
 tosend3 = '{"msg_id":2,"token":%s, "type":"camera_clock", "param":"' %token3 + str(myLocTime) + '"}'
 tosend4 = '{"msg_id":2,"token":%s, "type":"camera_clock", "param":"' %token4 + str(myLocTime) + '"}'
@@ -85,16 +85,22 @@ tosend4 = '{"msg_id":2,"token":%s, "type":"camera_clock", "param":"' %token4 + s
 #srv.send(tosend)
 #srv.recv(512)
 
-srv1.send(tosend1)
+srv1.send(tosend1.encode())
+srv2.send(tosend2.encode())
+srv3.send(tosend3.encode())
+srv4.send(tosend4.encode())
 srv1.recv(512)
-
-srv2.send(tosend2)
 srv2.recv(512)
-
-srv3.send(tosend3)
 srv3.recv(512)
-
-srv4.send(tosend4)
 srv4.recv(512)
 
-print "Time sets to %s"  %myLocTime
+svr1.close()
+svr2.close()
+svr3.close()
+svr4.close()
+
+
+print("Time sets to {}".format(myLocTime))
+total_time = time.time() - start_time
+print("temps écoulé : {}".format(total_time))
+
