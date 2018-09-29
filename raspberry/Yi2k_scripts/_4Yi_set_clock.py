@@ -3,7 +3,14 @@
 #
 # Res Andy 
 
-import os, re, sys, time, socket
+import os, re, sys, time, datetime, socket
+
+# add the script path in sys path because settings can't be
+# imported when this script is run with runpy
+script_path = os.path.dirname(os.path.abspath(__file__))
+if script_path not in sys.path:
+    sys.path.append(script_path)
+
 from settings import camaddr, cam1addr, cam2addr, cam3addr, cam4addr
 from settings import camport, cam1port, cam2port, cam3port, cam4port
 from time import localtime, strftime
@@ -100,13 +107,14 @@ srv2.recv(512)
 srv3.recv(512)
 srv4.recv(512)
 
-svr1.close()
-svr2.close()
-svr3.close()
-svr4.close()
+srv1.close()
+srv2.close()
+srv3.close()
+srv4.close()
 
 
 print("Time sets to {}".format(myLocTime))
 total_time = time.time() - start_time
 print("temps écoulé : {}".format(total_time))
+
 

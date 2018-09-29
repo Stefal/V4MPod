@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import smbus
@@ -8,6 +9,7 @@ import PyCmdMessenger
 import subprocess
 import gpsd
 import threading
+import runpy
 
 import Adafruit_Nokia_LCD as LCD
 import Adafruit_GPIO.SPI as SPI
@@ -738,6 +740,10 @@ def gnss_localization():
     print(packet.position())
     print(packet.time)
 
+def _4Yi_set_clock():
+    runpy.run_path("/home/pi/V4MPod/raspberry/Yi2k_scripts/_4Yi_set_clock.py")
+
+
 def exit_loop():
     global keepRunning
     keepRunning=False
@@ -833,7 +839,7 @@ menuA = [[{"Name":"Take Pic", "Func":"mycams.takePic", "Param":"logqueue"},
  {"Name":"Start cam log", "Func":"logfile=open_file", "Param":""},
  {"Name":"Stop Gnss log", "Func":"stop_gnss_log", "Param":""},
  {"Name":"GNSS Info", "Func":"gnss_localization", "Param":""},
- {"Name":"Log", "Func":"show_log", "Param":""},
+ {"Name":"Set Yi clock", "Func":"_4Yi_set_clock", "Param":""},
  {"Name":"Exit", "Func":"exit_loop", "Param":""},
  {"Name":"Power off PI", "Func":"power_down_pi", "Param":""},
 

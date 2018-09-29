@@ -4,6 +4,13 @@
 # Res Andy 
 
 import os, re, sys, time, socket
+
+# add the script path in sys path because settings can't be
+# imported when this script is run with runpy
+script_path = os.path.dirname(os.path.abspath(__file__))
+if script_path not in sys.path:
+    sys.path.append(script_path)
+    
 from settings import camaddr, cam1addr, cam2addr, cam3addr, cam4addr
 from settings import camport, cam1port, cam2port, cam3port, cam4port
 from time import localtime, strftime
