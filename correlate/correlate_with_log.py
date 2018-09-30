@@ -322,9 +322,12 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
         # print("except")
         delta_list.append((loglist[0].log_timestamp - piclist[0].DateTimeOriginal).total_seconds())
     # print(delta_list)
+    #import pdb; pdb.set_trace()
+    try:
+        avg_delta = sum(delta_list) / len(delta_list)
+    except ZeroDivisionError:
+        avg_delta = -0.5
     
-    avg_delta = sum(delta_list) / len(delta_list)
-    #avg_delta = 1.5
     print("ecart moyen entre le log et les photos : ", avg_delta)
     if user_delta:
         user_delta = input("Enter a new delta value: ")
@@ -405,10 +408,10 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
             print("Average delta : {0}".format(avg_delta))"""
         except Exception as e:
             logger.warning(__("Exception: {}".format(e)))
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
             # print("i, gap, n")
-            # print("End of list")
-            # pass
+            print("End of list")
+            pass
 
         gap = gap + n - 1
         """
