@@ -62,7 +62,7 @@ def get_lat_lon_time_from_nmea(nmea_file, local_time=True):
 
     # Get initial date
     for l in lines:
-        if "GPRMC" in l:
+        if ("GPRMC" in l) or ("GNRMC" in l):
             data = pynmea2.parse(l)
             date = data.datetime.date()
             break
