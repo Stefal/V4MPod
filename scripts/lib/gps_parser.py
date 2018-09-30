@@ -70,11 +70,11 @@ def get_lat_lon_time_from_nmea(nmea_file, local_time=True):
     # Parse GPS trace
     points = []
     for l in lines:
-        if "GPRMC" in l:
+        if ("GPRMC" in l) or ("GNRMC" in l):
             data = pynmea2.parse(l)
             date = data.datetime.date()
 
-        if "$GPGGA" in l:
+        if ("$GPGGA" in l) or ("$GLGGA" in l) or ("$GBGGA" in l) or ("$GAGGA" in l) or ("$GNGGA" in l):
             data = pynmea2.parse(l)
             timestamp = datetime.datetime.combine(date, data.timestamp)
             lat, lon, alt = data.latitude, data.longitude, data.altitude
