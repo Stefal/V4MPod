@@ -48,7 +48,8 @@ In your test folder you will get:
 """ TODO :
 - Calculate the total size to copy, and the space left on the destination
 """
-import os, subprocess, sys, pyexiv2, datetime, shutil, time, argparse
+import os, subprocess, sys, datetime, shutil, time, argparse
+from lib.exif_read import ExifRead as EXIF
 from threading import Thread
 from Queue import Queue
 
@@ -83,10 +84,11 @@ def list_jpg(directory, camid=None):
     files = []
     # get DateTimeOriginal data from the images and sort the list by timestamp
     for filepath in file_list:
-        metadata = pyexiv2.ImageMetadata(filepath)
-        metadata.read()
+        metadata = EXIF(filepath)
+        
         try:
-            t = metadata["Exif.Photo.DateTimeOriginal"].value
+            t = metadata.extract_capture_time()
+            #s = int(t.microsecond / 1000000)
             # print t
             # print type(t)
             # s = metadata["Exif.Photo.SubSecTimeOriginal"].value
