@@ -269,16 +269,22 @@ def write_metadata(image_lists):
     """
     for image_list in image_lists:
         for image in image_list:
+            #TODO dans ces if, chercher pourquoi j'ai '' comme valeur, au lieu de None, ce qui
+            #rendrait la condition plus lisible (if image.Latitude is not None:)
             # metadata = pyexiv2.ImageMetadata(image.path)
             metadata = ExifEdit(image.path)
             # metadata.read()
             metadata.add_date_time_original(image.New_DateTimeOriginal)
-            if image.Latitude is not None and image.Longitude is not None:
-                # metadata.add_subsec_time_original(image.New_SubSecTimeOriginal)
+            # metadata.add_subsec_time_original(image.New_SubSecTimeOriginal)
+            
+            if image.Latitude != "" and image.Longitude != "":
+                #import pdb; pdb.set_trace()
                 metadata.add_lat_lon(image.Latitude, image.Longitude)
-            if image.ImgDirection is not None:
+                
+            if image.ImgDirection != "":
                 metadata.add_direction(image.ImgDirection)
-            if image.Ele is not None:
+                
+            if image.Ele != "" and image.Ele is not None:
                 metadata.add_altitude(image.Ele)
             metadata.write()
             print('Writing new Exif metadata to ', image.path)
@@ -1129,6 +1135,7 @@ def geotag_from_gpx(piclist, gpx_file, offset_time=0, offset_bearing=0, offset_d
     not have all the images from a multicam setup at the same exact location
     :return: nothing, the function update the New_Picture_infos namedtuple inside the lists"""
     now = datetime.datetime.now(tzlocal())
+    
     print("Your local timezone is {0}, if this is not correct, your geotags will be wrong.".format(
         now.strftime('%Y-%m-%d %H:%M:%S %z')))
 
@@ -1151,6 +1158,7 @@ def geotag_from_gpx(piclist, gpx_file, offset_time=0, offset_bearing=0, offset_d
         # add_exif_using_timestamp(filepath, filetime, gpx, time_offset, bearing_offset)
         # metadata = ExifEdit(filename)
         t = pic.New_DateTimeOriginal - datetime.timedelta(seconds=offset_time)
+        
         try:
             lat, lon, bearing, elevation = interpolate_lat_lon(gpx, t)
             corrected_bearing = (bearing + offset_bearing) % 360
@@ -1508,6 +1516,9 @@ if __name__ == '__main__':
         input_time_offset = 0
         while True:
             user_geo_input = raw_input("Apply a time offset and restart geotag? (value or n) : ")
+            #TODO chercher pourquoi lorsqu'on avait des photos avec une géolocalisation OK, mais que volontairement
+            # on applique un offset complètement en dehors de la plage horaire, la nouvelle correlation semble conserver
+            # les Lat/Lon précédents.
             if user_geo_input.lower() == "n":
                 break
             try:
@@ -1541,7 +1552,7 @@ if __name__ == '__main__':
         user_input = raw_input("Write the new exif data in the pictures? (y or n) : ")
         if user_input == "y":
             #remove pictures without lat/long
-            cam_group.filter_images(latlon = True)
+            #cam_group.filter_images(latlon = True)
             write_metadata([i.new_image_list for i in cam_group])
     # Move the duplicate pictures to the excluded folder
     if args.exclude_close_pic:
