@@ -273,13 +273,15 @@ def write_metadata(image_lists):
             metadata = ExifEdit(image.path)
             # metadata.read()
             metadata.add_date_time_original(image.New_DateTimeOriginal)
-            # metadata.add_subsec_time_original(image.New_SubSecTimeOriginal)
-            metadata.add_lat_lon(image.Latitude, image.Longitude)
-            metadata.add_direction(image.ImgDirection)
+            if image.Latitude is not None and image.Longitude is not None:
+                # metadata.add_subsec_time_original(image.New_SubSecTimeOriginal)
+                metadata.add_lat_lon(image.Latitude, image.Longitude)
+            if image.ImgDirection is not None:
+                metadata.add_direction(image.ImgDirection)
             if image.Ele is not None:
                 metadata.add_altitude(image.Ele)
             metadata.write()
-            print('Writing new timestamp to ', image.path)
+            print('Writing new Exif metadata to ', image.path)
 
 
 def filter_images(piclists):

@@ -81,6 +81,7 @@ def gpgga_to_dms(gpgga):
 
 
 def utc_to_localtime(utc_time):
+    
     utc_offset_timedelta = datetime.datetime.utcnow() - datetime.datetime.now()
     return utc_time - utc_offset_timedelta
 
