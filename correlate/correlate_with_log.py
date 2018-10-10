@@ -1044,7 +1044,8 @@ def correlate_log_and_pic(camera_obj, auto=True):
         #piclist_corrected, deviation = correlate_manual(camera_obj, camera_obj.log_list, nearest, user_delta = True)
         #piclist_corrected, deviation = correlate_manual(camera_obj, camera_obj.log_list, camera_obj.image_list[:], user_delta = True)
         #piclist_corrected, deviation = correlate_manual(camera_obj, camera_obj.log_list, single_cam_image_list, user_delta = True)
-        piclist_corrected, deviation = correlate_nearest_time_exclusive(camera_obj, camera_obj.log_list, camera_obj.image_list[:], user_delta = True)
+        #piclist_corrected, deviation = correlate_nearest_time_exclusive(camera_obj, camera_obj.log_list, camera_obj.image_list[:], user_delta = True)
+        piclist_corrected, deviation = correlate_nearest_time_exclusive(camera_obj, camera_obj.log_list, single_cam_image_list, user_delta = False)
             
     return piclist_corrected
 
