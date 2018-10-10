@@ -384,11 +384,18 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
                     logger.info("première photo, elle sera un peu en retard")
                     standby_delay = 0.8
 
-                delta = abs((cp_loglist[i + gap].log_timestamp - pic.DateTimeOriginal).total_seconds() - avg_delta + standby_delay)
-                next_delta = abs((cp_loglist[i + gap + n].log_timestamp - pic.DateTimeOriginal).total_seconds() - avg_delta + standby_delay)
                 short_path = os.path.basename(pic.path) if pic.path is not None else "virtual image"
+                delta = abs((cp_loglist[i + gap].log_timestamp - pic.DateTimeOriginal).total_seconds() - avg_delta + standby_delay)
                 logger.info(__("A Calcul de la diff entre {0} et {1} : {2}".format(cp_loglist[i + gap].log_timestamp, short_path, delta)))
-                logger.info(__("B Calcul de la diff entre {0} et {1} : {2}".format(cp_loglist[i + gap + n].log_timestamp, short_path, next_delta)))
+                
+                # gestion du cas de la dernière photo
+                if i + gap + n < len(cp_loglist):
+                    next_delta = abs((cp_loglist[i + gap + n].log_timestamp - pic.DateTimeOriginal).total_seconds() - avg_delta + standby_delay)
+                    logger.info(__("B Calcul de la diff entre {0} et {1} : {2}".format(cp_loglist[i + gap + n].log_timestamp, short_path, next_delta)))
+                else:
+                    delta = 0
+                    logger.info("Fin de la liste")
+                    
                 
             while next_delta <= delta:
                 piclist_corrected.insert(len(piclist_corrected), None)
@@ -417,9 +424,9 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
         except Exception as e:
             logger.warning(__("Exception: {}".format(e)))
             #import pdb; pdb.set_trace()
-            # print("i, gap, n")
-            print("End of list")
-            pass
+            #print("i, gap, n")
+            #print("End of list")
+            
 
         gap = gap + n - 1
         """
@@ -498,7 +505,7 @@ def correlate_nearest_time_manual(camera_obj, loglist = None, piclist = None, us
         
 
             
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     piclist_corrected = []
     print("len loglist:{0}".format(len(loglist)))
     print("len piclist:{0}".format(len(piclist)))
@@ -564,9 +571,6 @@ def correlate_nearest_time_manual(camera_obj, loglist = None, piclist = None, us
             #gap += 1
             #print("Gap est à : ", gap)
             
-            
-        if loglist[i].log_timestamp == datetime.datetime(2018,05,30,10,24,05,757305):
-            import pdb; pdb.set_trace()
         for idx in range(n):
             loglist[i + idx] = loglist[i + idx]._replace(log_timestamp = loglist[i + idx].log_timestamp - datetime.timedelta(days = 20))
         
@@ -576,7 +580,7 @@ def correlate_nearest_time_manual(camera_obj, loglist = None, piclist = None, us
     # piclist_corrected = [i for i in piclist_corrected if (type(i) == New_Picture_infos and type(i.path) != None) or type(i) == bool]
     deviation = standard_deviation(compute_delta3(loglist, piclist_corrected))
     # print("standard deviation : ", deviation)
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     for pic in piclist_corrected:
         if isinstance(pic, New_Picture_infos):
             try:
