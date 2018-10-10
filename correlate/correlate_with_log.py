@@ -961,6 +961,7 @@ def correlate_log_and_pic(camera_obj, auto=True):
     piclist_corrected = []
     pic_count_diff = cam.log_count - cam.pic_count
     single_cam_image_list = insert_missing_timestamp(cam)
+    import pdb; pdb.set_trace()
     original_deviation = standard_deviation(compute_delta3(cam.log_list, single_cam_image_list))
     
     if auto:
@@ -1399,7 +1400,11 @@ def find_file(directory, file_extension):
     file_list = []
     for root, sub_folders, files in os.walk(directory):
         file_list += [os.path.join(root, filename) for filename in files if filename.lower().endswith(file_extension)]
-
+    
+    # removing correlate.log from the result list
+    # TODO Sortir le choix du ou des fichiers de cette fonction. Cela devrait se faire ailleurs
+    # par exemple dans main.
+    file_list = [x for x in file_list if "correlate.log" not in x]
     if len(file_list) == 1:
         file = file_list[0]
         print("{0} : {1} will be used in the script".format(file_extension, file))
@@ -1452,6 +1457,7 @@ if __name__ == '__main__':
     if args.logfile is None:
         print("=" * 30)
         args.logfile = find_file(args.source, "log")
+        
     if args.logfile is None:
         print("No logfile found... Exiting...")
         sys.exit()
