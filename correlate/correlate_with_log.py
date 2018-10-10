@@ -367,7 +367,7 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
             if  i + 1 < len(piclist) and piclist[i+1].path is None:
                 delta = 0
                 next_delta = 1
-                logger.info(__("l'image suivant {} est une Image virtuelle.".format(os.path.basename(pic.path))))
+                logger.info("l'image suivante est une Image virtuelle.")
             else:
                 #S'il s'est passé plus de 60 secondes entre la dernière photo et celle en cours, alors les caméras se sont mise
                 #en veille, ce qui fait que celle en cours aura un timestamp un peu retardé par rapport aux suivantes.
@@ -423,10 +423,10 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
             print("Average delta : {0}".format(avg_delta))"""
         except Exception as e:
             logger.warning(__("Exception: {}".format(e)))
-            #import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()
             #print("i, gap, n")
             #print("End of list")
-            
+                
 
         gap = gap + n - 1
         """
@@ -961,7 +961,6 @@ def correlate_log_and_pic(camera_obj, auto=True):
     piclist_corrected = []
     pic_count_diff = cam.log_count - cam.pic_count
     single_cam_image_list = insert_missing_timestamp(cam)
-    import pdb; pdb.set_trace()
     original_deviation = standard_deviation(compute_delta3(cam.log_list, single_cam_image_list))
     
     if auto:
