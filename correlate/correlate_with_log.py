@@ -315,14 +315,14 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
     :return: a list of New_Picture_infos namedtuple, the standard deviation between log's timestamp
     and image's timestamp"""
 
-    # calcule le delta moyen log-pic sur les premiers 5% des photos
+    # calcule le delta moyen log-pic sur les premiers 10% des photos
     if loglist == None : loglist = camera_obj.log_list
     if piclist == None : piclist = camera_obj.image_list
     piclist = manual_timestamp(camera_obj, loglist, piclist)
     delta_list = []
     try:
 
-        for i, log_line in enumerate(loglist[:int(len(loglist) // 20 + 1)]):
+        for i, log_line in enumerate(loglist[:int(len(loglist) // 10 + 1)]):
             if piclist[i].path is not None:
                 delta_list.append((log_line.log_timestamp - piclist[i].DateTimeOriginal).total_seconds())
             print("{0} : calcul {1} - {2} : {3}".format(i, log_line.log_timestamp, piclist[i].DateTimeOriginal, (log_line.log_timestamp - piclist[i].DateTimeOriginal).total_seconds()))
@@ -423,7 +423,7 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
             print("Average delta : {0}".format(avg_delta))"""
         except Exception as e:
             logger.warning(__("Exception: {}".format(e)))
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
             #print("i, gap, n")
             #print("End of list")
                 
@@ -472,6 +472,10 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
         else:
             logger.info("Pas une image")
     """
+    #TODO Attention, ce nouvel appel à manual_timestamp ne permettra pas de faire
+    # faire des modifications, puisque qu'il faut refaire la correlation ensuite.
+    # trouver une solution élégante pour ça. Soit supprimer la possibilité de faire des
+    # modifs, soit refaire la correlation ensuite.
     piclist_corrected=manual_timestamp(camera_obj, loglist, piclist_corrected)
     deviation = standard_deviation(compute_delta3(loglist, piclist_corrected))
     print("standard deviation : ", deviation)
@@ -1045,7 +1049,7 @@ def correlate_log_and_pic(camera_obj, auto=True):
         #piclist_corrected, deviation = correlate_manual(camera_obj, camera_obj.log_list, camera_obj.image_list[:], user_delta = True)
         #piclist_corrected, deviation = correlate_manual(camera_obj, camera_obj.log_list, single_cam_image_list, user_delta = True)
         #piclist_corrected, deviation = correlate_nearest_time_exclusive(camera_obj, camera_obj.log_list, camera_obj.image_list[:], user_delta = True)
-        piclist_corrected, deviation = correlate_nearest_time_exclusive(camera_obj, camera_obj.log_list, single_cam_image_list, user_delta = False)
+        piclist_corrected, deviation = correlate_nearest_time_exclusive(camera_obj, camera_obj.log_list, single_cam_image_list, user_delta = True)
             
     return piclist_corrected
 
@@ -1307,6 +1311,8 @@ def open_session_in_josm(session_file_path, remote_port=8111):
     import urllib2
     import urllib
     #TODO utiliser 127.0.0.1:8111/version pour vérifier si josm est en route et le remote actif.
+    #TODO gérer les cas ou le chemin de fichier comporte des caractères accentués. L'idéal serait un passage
+    # a python 3, mais je doute que les dépendances le gère correctement.
     session_file_path = urllib.quote(session_file_path)
 
     print("Opening the session in Josm....", end="")
