@@ -374,7 +374,7 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
                 #Pour cette raison, on ajout 0.8s pour éviter que la photo soit calé sur le timestamp suivant.
                 #Le try except est là pour éviter l'erreur pour la toute première photo.
                 try:
-                    standby_delay = 0.8 if (pic.DateTimeOriginal - piclist[i-1].DateTimeOriginal).total_seconds() > 60 else 0
+                    standby_delay = 0.8 if (pic.DateTimeOriginal - piclist[i-1].DateTimeOriginal).total_seconds() > 50 else 0
                     
                     if standby_delay != 0:
                         logger.info(__("standby_delay vaut {}".format(standby_delay)))
