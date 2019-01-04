@@ -315,14 +315,14 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
     :return: a list of New_Picture_infos namedtuple, the standard deviation between log's timestamp
     and image's timestamp"""
 
-    # calcule le delta moyen log-pic sur les premiers 5% des photos
+    # calcule le delta moyen log-pic sur les premiers 10% des photos
     if loglist == None : loglist = camera_obj.log_list
     if piclist == None : piclist = camera_obj.image_list
     piclist = manual_timestamp(camera_obj, loglist, piclist)
     delta_list = []
     try:
 
-        for i, log_line in enumerate(loglist[:int(len(loglist) // 20 + 1)]):
+        for i, log_line in enumerate(loglist[:int(len(loglist) // 10 + 1)]):
             if piclist[i].path is not None:
                 delta_list.append((log_line.log_timestamp - piclist[i].DateTimeOriginal).total_seconds())
             print("{0} : calcul {1} - {2} : {3}".format(i, log_line.log_timestamp, piclist[i].DateTimeOriginal, (log_line.log_timestamp - piclist[i].DateTimeOriginal).total_seconds()))
@@ -367,14 +367,14 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
             if  i + 1 < len(piclist) and piclist[i+1].path is None:
                 delta = 0
                 next_delta = 1
-                logger.info(__("l'image suivant {} est une Image virtuelle.".format(os.path.basename(pic.path))))
+                logger.info("l'image suivante est une Image virtuelle.")
             else:
                 #S'il s'est passé plus de 60 secondes entre la dernière photo et celle en cours, alors les caméras se sont mise
                 #en veille, ce qui fait que celle en cours aura un timestamp un peu retardé par rapport aux suivantes.
                 #Pour cette raison, on ajout 0.8s pour éviter que la photo soit calé sur le timestamp suivant.
                 #Le try except est là pour éviter l'erreur pour la toute première photo.
                 try:
-                    standby_delay = 0.8 if (pic.DateTimeOriginal - piclist[i-1].DateTimeOriginal).total_seconds() > 60 else 0
+                    standby_delay = 0.8 if (pic.DateTimeOriginal - piclist[i-1].DateTimeOriginal).total_seconds() > 50 else 0
                     
                     if standby_delay != 0:
                         logger.info(__("standby_delay vaut {}".format(standby_delay)))
@@ -426,7 +426,7 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
             #import pdb; pdb.set_trace()
             #print("i, gap, n")
             #print("End of list")
-            
+                
 
         gap = gap + n - 1
         """
@@ -472,6 +472,10 @@ def correlate_nearest_time_exclusive(camera_obj, loglist = None, piclist = None,
         else:
             logger.info("Pas une image")
     """
+    #TODO Attention, ce nouvel appel à manual_timestamp ne permettra pas de faire
+    # faire des modifications, puisque qu'il faut refaire la correlation ensuite.
+    # trouver une solution élégante pour ça. Soit supprimer la possibilité de faire des
+    # modifs, soit refaire la correlation ensuite.
     piclist_corrected=manual_timestamp(camera_obj, loglist, piclist_corrected)
     deviation = standard_deviation(compute_delta3(loglist, piclist_corrected))
     print("standard deviation : ", deviation)
@@ -1044,7 +1048,8 @@ def correlate_log_and_pic(camera_obj, auto=True):
         #piclist_corrected, deviation = correlate_manual(camera_obj, camera_obj.log_list, nearest, user_delta = True)
         #piclist_corrected, deviation = correlate_manual(camera_obj, camera_obj.log_list, camera_obj.image_list[:], user_delta = True)
         #piclist_corrected, deviation = correlate_manual(camera_obj, camera_obj.log_list, single_cam_image_list, user_delta = True)
-        piclist_corrected, deviation = correlate_nearest_time_exclusive(camera_obj, camera_obj.log_list, camera_obj.image_list[:], user_delta = True)
+        #piclist_corrected, deviation = correlate_nearest_time_exclusive(camera_obj, camera_obj.log_list, camera_obj.image_list[:], user_delta = True)
+        piclist_corrected, deviation = correlate_nearest_time_exclusive(camera_obj, camera_obj.log_list, single_cam_image_list, user_delta = True)
             
     return piclist_corrected
 
@@ -1306,6 +1311,8 @@ def open_session_in_josm(session_file_path, remote_port=8111):
     import urllib2
     import urllib
     #TODO utiliser 127.0.0.1:8111/version pour vérifier si josm est en route et le remote actif.
+    #TODO gérer les cas ou le chemin de fichier comporte des caractères accentués. L'idéal serait un passage
+    # a python 3, mais je doute que les dépendances le gère correctement.
     session_file_path = urllib.quote(session_file_path)
 
     print("Opening the session in Josm....", end="")
@@ -1399,7 +1406,11 @@ def find_file(directory, file_extension):
     file_list = []
     for root, sub_folders, files in os.walk(directory):
         file_list += [os.path.join(root, filename) for filename in files if filename.lower().endswith(file_extension)]
-
+    
+    # removing correlate.log from the result list
+    # TODO Sortir le choix du ou des fichiers de cette fonction. Cela devrait se faire ailleurs
+    # par exemple dans main.
+    file_list = [x for x in file_list if "correlate.log" not in x]
     if len(file_list) == 1:
         file = file_list[0]
         print("{0} : {1} will be used in the script".format(file_extension, file))
@@ -1452,6 +1463,7 @@ if __name__ == '__main__':
     if args.logfile is None:
         print("=" * 30)
         args.logfile = find_file(args.source, "log")
+        
     if args.logfile is None:
         print("No logfile found... Exiting...")
         sys.exit()
