@@ -6,6 +6,7 @@ import datetime
 import os
 import math
 import argparse
+import csv
 from exif_read import ExifRead as EXIFRead
 from collections import namedtuple
 
@@ -85,16 +86,18 @@ def make_csv_line(pic):
     minute = math.floor((pic.ImgDirection - degree)*60)
     rad = (str(degree) + "°" + " " + str(minute) + "'")
     
-    line = date_time + ";" + lat + ";" + lon + ";" + ele + ";" + rad + ";" + "0000"
+    line = (date_time, lat, lon, ele, rad, "0000")
 
     return line
 
 def write_csv(lines, filename):
-    with open(filename, "w") as csv_file:
+    with open(filename, "w", newline ='\n', encoding='utf-8') as csv_file:
         print("Writing {}".format(filename))
-        csv_file.write("time; lat; lon; alt; rad; goProFailed \n")
+        header = ["time", "lat", "lon", "alt", "rad", "goProFailed"]
+        csv_writer = csv.writer(csv_file, delimiter=";", lineterminator="\n")
+        csv_writer.writerow(header)
         for line in lines:
-            csv_file.write(line + "\n")
+            csv_writer.writerow(line)
 
 def main():
     args = arg_parse()
