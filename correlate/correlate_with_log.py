@@ -1434,7 +1434,8 @@ def find_directory(working_dir, strings_to_find):
     dir_list = [i for i in os.listdir(working_dir) if os.path.isdir(i)]
     for string in strings_to_find:
         try:
-            images_path.append(os.path.abspath(os.path.join(working_dir, dir_list[dir_list.index(string)])))
+            idx = [i.lower() for i in dir_list].index(string.lower())
+            images_path.append(os.path.abspath(os.path.join(working_dir, dir_list[idx])))
         except ValueError:
             print("I can't find {0}".format(string))
             images_path.append("none")
