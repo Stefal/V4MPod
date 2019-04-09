@@ -2,7 +2,6 @@
 
 import datetime
 import math
-
 WGS84_a = 6378137.0
 WGS84_b = 6356752.314245
 
@@ -81,7 +80,6 @@ def gpgga_to_dms(gpgga):
 
 
 def utc_to_localtime(utc_time):
-    
     utc_offset_timedelta = datetime.datetime.utcnow() - datetime.datetime.now()
     return utc_time - utc_offset_timedelta
 
@@ -161,7 +159,8 @@ def interpolate_lat_lon(points, t, max_dt=1):
         else:
             dt = (t - points[-1][0]).total_seconds()
         if dt > max_dt:
-            raise ValueError("time t not in scope of gpx file")
+            raise ValueError(
+                "time t not in scope of gpx file by {} seconds".format(dt))
         else:
             print(
                 "time t not in scope of gpx file by {} seconds, extrapolating...".format(dt))
@@ -191,22 +190,51 @@ def interpolate_lat_lon(points, t, max_dt=1):
                 after = points[i]
                 break
 
-    # time diff
-    dt_before = (t - before[0]).total_seconds()
-    dt_after = (after[0] - t).total_seconds()
+    # weight based on time
+    weight = (t - before[0]).total_seconds() / \
+        (after[0] - before[0]).total_seconds()
 
-    # simple linear interpolation
-    lat = (before[1] * dt_after + after[1] *
-           dt_before) / (dt_before + dt_after)
-    lon = (before[2] * dt_after + after[2] *
-           dt_before) / (dt_before + dt_after)
+    # simple linear interpolation in case points are not the same
+    if before[1] == after[1]:
+        lat = before[1]
+    else:
+        lat = before[1] - weight * before[1] + weight * after[1]
 
+    if before[2] == after[2]:
+        lon = before[2]
+    else:
+        lon = before[2] - weight * before[2] + weight * after[2]
+
+    # camera angle
     bearing = compute_bearing(before[1], before[2], after[1], after[2])
 
-    if before[3] is not None and after[3] is not None:
-        ele = (before[3] * dt_after + after[3] *
-               dt_before) / (dt_before + dt_after)
+    # altitude
+    if before[3] is not None:
+        ele = before[3] - weight * before[3] + weight * after[3]
     else:
         ele = None
 
     return lat, lon, bearing, ele
+
+
+def write_gpx(filename, gps_trace):
+    time_format = "%Y-%m-%dT%H:%M:%S.%f"
+    gpx = "<gpx>" + "\n"
+    gpx += "<trk>" + "\n"
+    gpx += "<name>Mapillary GPX</name>" + "\n"
+    gpx += "<trkseg>" + "\n"
+    for point in gps_trace:
+        lat = point[1]
+        lon = point[2]
+        time = datetime.datetime.strftime(point[0], time_format)[:-3]
+        elevation = point[3]
+        gpx += "<trkpt lat=\"" + \
+            str(lat) + "\" lon=\"" + str(lon) + "\">" + "\n"
+        gpx += "<ele>" + str(elevation) + "</ele>" + "\n"
+        gpx += "<time>" + time + "</time>" + "\n"
+        gpx += "</trkpt>" + "\n"
+    gpx += "</trkseg>" + "\n"
+    gpx += "</trk>" + "\n"
+    gpx += "</gpx>" + "\n"
+    with open(filename, "w") as fout:
+        fout.write(gpx)
