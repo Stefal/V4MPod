@@ -15,3 +15,6 @@ def get_untiled_lot(id_campaign, id_malette=42):
             
     return untiled_lots
     
+def get_lot(id_lot, id_malette=42):
+    lot = c.make(ressources.Lot, id_lot, id_malette)
+    return lot

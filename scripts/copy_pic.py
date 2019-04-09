@@ -51,16 +51,16 @@ In your test folder you will get:
 import os, subprocess, sys, datetime, shutil, time, argparse
 from lib.exif_read import ExifRead as EXIF
 from threading import Thread
-from Queue import Queue
+from queue import Queue
 
 
 def arg_parse():
     """ Parse the command line you use to launch the script """
-    parser = argparse.ArgumentParser(description="A tool to copy pictures from multiple external sources",
-                                     version="0.01")
-
+    
+    parser= argparse.ArgumentParser(description="A tool to copy pictures from multiple external sources")
     parser.add_argument("destination", nargs="?", help="Path destination for the pictures. Without this parameter, "
                                                        "the script will use the current directory as the destination", default=os.getcwd())
+    parser.add_argument("--version", action="version", version="%(prog)s 0.02")
     parser.add_argument("-s", "--source", help="Name of the volume's sources", default="avant, droite, arriere, gauche")
     parser.add_argument("-c", "--cut", help="Min time between two pictures to create a new group (in seconds)",
                         default=10, type=int)
@@ -93,7 +93,7 @@ def list_jpg(directory, camid=None):
             # print type(t)
             # s = metadata["Exif.Photo.SubSecTimeOriginal"].value
             files.append([camid, filepath, t])
-        except KeyError, e:
+        except KeyError as e:
             # if any of the required tags are not set the image is not added to the list
             print("Skipping {0}: {1}".format(filename, e))
 
@@ -144,7 +144,7 @@ def get_drivelist():
         drivelist = subprocess.Popen('wmic logicaldisk get name,volumename, drivetype, volumeserialnumber /format:CSV',
                                      shell=True, stdout=subprocess.PIPE)
         drivelistout, err = drivelist.communicate()
-        drivelist = drivelistout.replace("\r", "").split("\n")
+        drivelist = drivelistout.decode().replace("\r", "").split("\n")
         drivelist = [drive.split(",") for drive in drivelist if drive != ""]
         drive_type_index = drivelist[0].index("DriveType")
         drive_letter_index = drivelist[0].index("Name")
@@ -177,7 +177,8 @@ def find_in_sublist(piclist, groups_start):
     for i, pic in enumerate(piclist):
         try:
             j = pic.index(groups_start)
-        except ValueError:
+        except ValueError as e:
+            
             continue
         return i
 
@@ -187,15 +188,15 @@ def listgroup():
     group_start = 0
     while groups:
         group_end = groups.pop()
-        print "start : ", group_start, "end : ", group_end
+        print("start : ", group_start, "end : ", group_end)
         for i in range(group_start, group_end):
-            print "i = ", i, "pic = ", piclist[i][1]
-        print "fin de groupe"
+            print("i = ", i, "pic = ", piclist[i][1])
+        print("fin de groupe")
         group_start = group_end
     # print last group
     for i in range(group_start, len(piclist)):
-        print "i = ", i, "pic = ", piclist[i][1]
-        print "fin de groupe"
+        print("i = ", i, "pic = ", piclist[i][1])
+        print("fin de groupe")
 
 
 def make_pics_groups(piclist, groups):
@@ -259,8 +260,8 @@ def start_copy_thread():
     picQueue3.join()
     picQueue4.join()
     picQueue5.join()
-    print len(piclist[:pic_end]), "pictures copied in", (
-        datetime.datetime.now() - start_time).total_seconds(), "seconds"
+    print(len(piclist[:pic_end]), "pictures copied in", (
+        datetime.datetime.now() - start_time).total_seconds(), "seconds")
 
 
 def rename_and_copy_pic(queue):
@@ -277,7 +278,7 @@ def rename_and_copy_pic(queue):
                 pass
         picture_name = timestamp.strftime("%Y-%m-%d_%HH%Mmn%Ss") + "-Cam_" + camid + "-" + os.path.basename(
             picture_path)
-        print "copying", picture_path, " to ", os.path.join(dest_path, picture_name)
+        print("copying", picture_path, " to ", os.path.join(dest_path, picture_name))
         shutil.copyfile(picture_path, os.path.join(dest_path,
                                                    picture_name))  # TODO: add an option to choose overwrite destination, or skip
         queue.task_done()
@@ -311,7 +312,7 @@ if __name__ == '__main__':
     cutoff = args.cut
     allgroups = args.allgroups
     volume_names = [volume.strip() for volume in args.source.lower().split(",")]
-    print "Searching for volumes...."
+    print("Searching for volumes....")
     alldrivelist = get_drivelist()
     drivelist = []
     for volume in volume_names:
@@ -320,7 +321,7 @@ if __name__ == '__main__':
             drivelist.append([drive_letter, volume])
 
     for drive in drivelist:
-        print "Volume found: {}   ({})".format(drive[0], drive[1])
+        print("Volume found: {}   ({})".format(drive[0], drive[1]))
     if len(drivelist) == 0:
         sys.exit("No Volume found !")
     if len(drivelist) > 6:
@@ -329,12 +330,13 @@ if __name__ == '__main__':
 				rewrite the multithread part of this script to dynamicaly handle the number of sources")
 
     # Check if destination is a source too (bad idea)
-    if find_in_sublist([[drive.lower() for drive in drivedetail] for drivedetail in drivelist],
-                       os.path.splitdrive(dest_folder)[0].lower()) >= 0:
+    check_dest = find_in_sublist([[drive.lower() for drive in drivedetail] for drivedetail in drivelist],
+                       os.path.splitdrive(dest_folder)[0].lower())
+    if  type(check_dest) == int:
         sys.exit("Destination is the same as one source.... Exiting")
 
     piclist = []
-    print "Searching for pictures..."
+    print("Searching for pictures...")
     for drive in drivelist:
         drivepath, volume = drive
         piclist.extend(list_jpg(drivepath + "/DCIM/", volume))
@@ -344,7 +346,7 @@ if __name__ == '__main__':
     groups.append(piclist[0][1])
     ziplist = zip(piclist, piclist[1:])
     # print 'cutoff vaut', cutoff
-    print "Computing groups..."
+    print("Computing groups...")
 
     for pic_couple in ziplist:
         id1, path1, t1 = pic_couple[0]
@@ -356,12 +358,12 @@ if __name__ == '__main__':
 
     for i, group in enumerate(groups):
         groups[i] = find_in_sublist(piclist, group)
-        print "Group {0} start : {1}".format(i + 1, piclist[groups[i]][2].strftime("%Y-%m-%d_%HH%Mmn%Ss"))
+        print("Group {0} start : {1}".format(i + 1, piclist[groups[i]][2].strftime("%Y-%m-%d_%HH%Mmn%Ss")))
 
     input_validity = False
     while input_validity == False:
         if not allgroups:
-            user_input = raw_input(
+            user_input = input(
                 "\nEnter the group' number you want to copy\nOr enter the group range (e.g. 2-4 to copy the groups 2,3 and 4),\nOr press enter to copy all groups : ").split(
                 "-")
         else:
