@@ -20,6 +20,7 @@ from PIL import ImageDraw
 from PIL import ImageFont
 
 cam_range=0b00001111
+global cams_up
 
 # Set Rpi.GPIO to BCM mode
 GPIO.setmode(GPIO.BCM)
@@ -353,11 +354,14 @@ def stop_Timelapse():
 
 
 def power_up(cam=0b00000001):
-    c.send("KPower_up", cam)
-    time.sleep(6)
-    start_return = c.receive(arg_formats="b")
-    logfile.write(str(start_return) + "\n")
-    print(start_return)
+    if cams_up == False:
+        c.send("KPower_up", cam)
+        time.sleep(6)
+        start_return = c.receive(arg_formats="b")
+        logfile.write(str(start_return) + "\n")
+        global cams_up
+        cams_up = True
+        print(start_return)
     
 def power_down(cam=0b00000001):
     c.send("KPower_down", cam)
@@ -444,7 +448,20 @@ def open_file():
     flushthread=threading.Thread(target=flush_log, args=(logqueue,), name="flushlog")
     flushthread.start()
     return logfile
-    
+
+
+def new_session():
+    global logfile
+    logfile.write("Close logfile" + "\n")
+    logfile.close()
+    flushthread.do_run = False
+    #stop gnss log
+    stop_gnss_log()
+    #start new logfile
+    logfile = open_file()
+    #start new gnss log
+    start_gnss_log()
+
 def flush_log(logqueue):
     #since Python 3.4 file are inheritable. I think it's why
     #flush() alone doesn't work in this thread.
@@ -506,6 +523,7 @@ menuA = [[{"Name":"Take Pic", "Func":"takePic", "Param":"cam_range, logqueue"},
  {"Name":"GNSS Info", "Func":"gnss_localization", "Param":""},
  {"Name":"Set Yi settings", "Func":"_4Yi_set_settings", "Param":""},
  {"Name":"Set Yi clock", "Func":"_4Yi_set_clock", "Param":""},
+ {"Name":"Start new session", "Func":"new_session", "Param":""},
  {"Name":"Exit", "Func":"exit_loop", "Param":""},
  {"Name":"Power off PI", "Func":"power_down_pi", "Param":""},
 
@@ -524,6 +542,7 @@ keepRunning=True
 flushthread = None
 timelapsethread = None
 Timelapse = False
+cams_up = False
 pic_count = 0
 logqueue=queue.Queue(maxsize=0)
 back=menu.create_blanck_img()
