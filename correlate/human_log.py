@@ -1,5 +1,5 @@
 #
-from __future__ import division
+
 import datetime
 import time
 import sys
@@ -7,10 +7,11 @@ import argparse
 
 
 def arg_parse():
-    parser = argparse.ArgumentParser(description="Script to convert timestamp to datetime", version="0.1")
+    parser = argparse.ArgumentParser(description="Script to convert timestamp to datetime")
+    parser.add_argument('--version', action='version', version='0.1')
     parser.add_argument("source", nargs="?",
                         help="Path of log file which contains the timestamp")
-    parser.add_argument("destination", help="File destination")
+    parser.add_argument("--destination", help="File destination")
     
 
     args = parser.parse_args()

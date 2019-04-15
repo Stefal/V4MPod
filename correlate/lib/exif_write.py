@@ -2,7 +2,7 @@ import sys
 import json
 import piexif
 
-from geo import decimal_to_dms
+from .geo import decimal_to_dms
 
 
 class ExifEdit(object):
@@ -15,10 +15,10 @@ class ExifEdit(object):
             self._ef = piexif.load(filename)
         except IOError:
             etype, value, traceback = sys.exc_info()
-            print >> sys.stderr, "Error opening file:", value
+            print("Error opening file:", value, file=sys.stderr)
         except ValueError:
             etype, value, traceback = sys.exc_info()
-            print >> sys.stderr, "Error opening file:", value
+            print("Error opening file:", value, file=sys.stderr)
 
     def add_image_description(self, dict):
         """Add a dict to image description."""
@@ -41,7 +41,7 @@ class ExifEdit(object):
             DateTimeOriginal = date_time.strftime(time_format)[:-3]
             self._ef['Exif'][piexif.ExifIFD.DateTimeOriginal] = DateTimeOriginal
         except Exception as e:
-            print("Error writing DateTimeOriginal, due to " + str(e))
+            print(("Error writing DateTimeOriginal, due to " + str(e)))
 
     def add_lat_lon(self, lat, lon, precision=1e7):
         """Add lat, lon to gps (lat, lon in float)."""
@@ -95,4 +95,4 @@ class ExifEdit(object):
 
         except IOError:
             type, value, traceback = sys.exc_info()
-            print >> sys.stderr, "Error saving file:", value
+            print("Error saving file:", value, file=sys.stderr)
