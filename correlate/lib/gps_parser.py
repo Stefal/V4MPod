@@ -32,13 +32,14 @@ def get_lat_lon_time_from_gpx(gpx_file, local_time=True):
         for track in gpx.tracks:
             for segment in track.segments:
                 for point in segment.points:
-                    #import pdb; pdb.set_trace()
+                        
                     t = utc_to_localtime(point.time) if local_time else point.time
                     points.append( (t, point.latitude, point.longitude, point.elevation) )
-    if len(gpx.waypoints) > 0:
+                    
+    '''if len(gpx.waypoints) > 0:
         for point in gpx.waypoints:
             t = utc_to_localtime(point.time) if local_time else point.time
-            points.append( (t, point.latitude, point.longitude, point.elevation) )
+            points.append( (t, point.latitude, point.longitude, point.elevation) )'''
 
     # sort by time just in case
     points.sort()
