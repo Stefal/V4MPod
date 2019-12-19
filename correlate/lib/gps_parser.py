@@ -44,6 +44,7 @@ def get_lat_lon_time_from_gpx(gpx_file, local_time=True):
     # sort by time just in case
     points.sort()
 
+
     return points
 
 
@@ -67,7 +68,7 @@ def get_lat_lon_time_from_nmea(nmea_file, local_time=True):
     # Get initial date
     for l in lines:
         if any(rmc in l for rmc in rmc_Talker_id):
-            data = pynmea2.parse(l)
+            data = pynmea2.parse(l, check=False)
             date = data.datetime.date()
             break
 
@@ -75,11 +76,11 @@ def get_lat_lon_time_from_nmea(nmea_file, local_time=True):
     points = []
     for l in lines:
         if any(rmc in l for rmc in rmc_Talker_id):
-            data = pynmea2.parse(l)
+            data = pynmea2.parse(l, check=False)
             date = data.datetime.date()
 
         if any(gga in l for gga in gga_Talker_id):
-            data = pynmea2.parse(l)
+            data = pynmea2.parse(l, check=False)
             timestamp = datetime.datetime.combine(date, data.timestamp)
             lat, lon, alt = data.latitude, data.longitude, data.altitude
             points.append((timestamp, lat, lon, alt))

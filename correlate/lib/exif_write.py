@@ -2,7 +2,9 @@ import sys
 import json
 import piexif
 
-from .geo import decimal_to_dms
+from geo import decimal_to_dms
+
+from .error import print_error
 
 
 class ExifEdit(object):
@@ -15,10 +17,10 @@ class ExifEdit(object):
             self._ef = piexif.load(filename)
         except IOError:
             etype, value, traceback = sys.exc_info()
-            print("Error opening file:", value, file=sys.stderr)
+            print >> sys.stderr, "Error opening file:", value
         except ValueError:
             etype, value, traceback = sys.exc_info()
-            print("Error opening file:", value, file=sys.stderr)
+            print >> sys.stderr, "Error opening file:", value
 
     def add_image_description(self, dict):
         """Add a dict to image description."""
@@ -29,19 +31,30 @@ class ExifEdit(object):
     def add_orientation(self, orientation):
         """Add image orientation to image."""
         if not orientation in range(1, 9):
-            print(
+            print_error(
                 "Error value for orientation, value must be in range(1,9), setting to default 1")
             self._ef['0th'][piexif.ImageIFD.Orientation] = 1
         else:
             self._ef['0th'][piexif.ImageIFD.Orientation] = orientation
 
-    def add_date_time_original(self, date_time, time_format='%Y:%m:%d %H:%M:%S.%f'):
+    def add_date_time_original(self, date_time):
         """Add date time original."""
         try:
-            DateTimeOriginal = date_time.strftime(time_format)[:-3]
+            DateTimeOriginal = date_time.strftime('%Y:%m:%d %H:%M:%S')
             self._ef['Exif'][piexif.ExifIFD.DateTimeOriginal] = DateTimeOriginal
         except Exception as e:
-            print(("Error writing DateTimeOriginal, due to " + str(e)))
+            print("Error writing DateTimeOriginal, due to " + str(e))
+                                                  
+        if date_time.microsecond != 0:
+            self.add_subsectimeoriginal(date_time.microsecond)
+            
+    def add_subsectimeoriginal(self, subsec_value):
+        """Add subsecond value in the subsectimeoriginal exif tag"""
+        try:
+            subsec = str(subsec_value).zfill(6)
+            self._ef['Exif'][piexif.ExifIFD.SubSecTimeOriginal] = subsec
+        except Exception as e:
+            print("Error writing SubSecTimeOriginal, due to " + str(e))
 
     def add_lat_lon(self, lat, lon, precision=1e7):
         """Add lat, lon to gps (lat, lon in float)."""
@@ -81,6 +94,17 @@ class ExifEdit(object):
             int(abs(direction) * precision), precision)
         self._ef["GPS"][piexif.GPSIFD.GPSImgDirectionRef] = ref
 
+    def add_firmware(self,firmware_string):
+        """Add firmware version of camera"""
+        self._ef['0th'][piexif.ImageIFD.Software] = firmware_string
+
+    def add_custom_tag(self, value, main_key, tag_key):
+        try:
+            self._ef[main_key][tag_key] = value
+        except:
+            print("could not set tag {} under {} with value {}".format(
+                tag_key, main_key, value))
+
     def write(self, filename=None):
         """Save exif data to file."""
         if filename is None:
@@ -95,4 +119,4 @@ class ExifEdit(object):
 
         except IOError:
             type, value, traceback = sys.exc_info()
-            print("Error saving file:", value, file=sys.stderr)
+            print >> sys.stderr, "Error saving file:", value
