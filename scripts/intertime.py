@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, sys, pyexiv2, datetime
+import os, sys, datetime
 #from datetime import datetime
+from dateutil.tz import tzlocal
+from lib.exif_read import ExifRead as EXIF
+from lib.exif_write import ExifEdit
 
 def print_list(list):
     for i, image in enumerate(list):
@@ -21,10 +24,10 @@ def list_images(directory):
     files = []
     # get DateTimeOriginal data from the images and sort the list by timestamp
     for filepath in file_list:
-        metadata = pyexiv2.ImageMetadata(filepath)
-        metadata.read()
+        metadata = EXIF(filepath)
+        #metadata.read()
         try:
-            t = metadata["Exif.Photo.DateTimeOriginal"].value
+            t = metadata.extract_capture_time()
             #print t
             #print type(t)
             #s = metadata["Exif.Photo.SubSecTimeOriginal"].value
@@ -86,10 +89,14 @@ def interpolate_timestamp(image_list, delta):
 
 def write_metadata(image_list):
     for image in image_list:
-        metadata = pyexiv2.ImageMetadata(image[0])
-        metadata.read()
-        metadata["Exif.Photo.DateTimeOriginal"] = image[1]
-        metadata["Exif.Photo.SubSecTimeOriginal"] = image[2]
+        #metadata = pyexiv2.ImageMetadata(image[0])
+        metadata = ExifEdit(image[0])
+        #metadata.read()
+        #metadata["Exif.Photo.DateTimeOriginal"] = image[1]
+        metadata.add_date_time_original(image[1])
+        #metadata["Exif.Photo.SubSecTimeOriginal"] = image[2]
+        metadata.add_subsectimeoriginal(image[2])
+        
         metadata.write()
         print('Writing new timestamp to ', image[0])
 
