@@ -535,7 +535,11 @@ def led_blink():
     
 
 
-class cam_ctrl(object):
+class Yi2K_cam_ctrl(object):
+    # This class control the Yi2K with an arduino where all camera are connected.
+    #TODO: Stocker l'état éteint ou allumé des caméras pour éviter de basculer en mode
+    # vidéo par inadvertance.
+
     def __init__(self, ardu_serial, ardu_baud, cam_range):
         self.ardu_serial = ardu_serial
         self.ardu_baud = ardu_baud
@@ -871,7 +875,7 @@ mybike = None
 qq = Queue()
 shutter = shutter_ctrl(qq, mybike, time_interval = 1.5, mode = "time")
 shutter.start()
-mycams = cam_ctrl("/dev/ttyACM0", 115200, 0b00001111)
+mycams = Yi2K_cam_ctrl("/dev/ttyACM0", 115200, 0b00001111)
 mycams.connect()
 
 
