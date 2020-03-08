@@ -408,10 +408,16 @@ def gnss_localization():
     print(packet.time)
 
 def _4Yi_set_clock():
-    runpy.run_path("/home/pi/V4MPod/raspberry/Yi2k_scripts/_4Yi_set_clock.py")
+    try:
+        runpy.run_path("/home/pi/V4MPod/raspberry/Yi2k_scripts/_4Yi_set_clock.py")
+    except:
+        logfile.write("Can't set clock, communication error")
 
 def _4Yi_set_settings():
-    runpy.run_path("/home/pi/V4MPod/raspberry/Yi2k_scripts/_4Yi_set_param.py")
+    try:
+        runpy.run_path("/home/pi/V4MPod/raspberry/Yi2k_scripts/_4Yi_set_param.py")
+    except:
+        logfile.write("Can't send settings, communication error")
 
 def exit_loop():
     global keepRunning
