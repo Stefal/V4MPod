@@ -1,23 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import division
-from __future__ import print_function
+
+
 
 import argparse
 import datetime
 import os
 import sys
 import time
-import urllib
-import urlparse
+import pyproj
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 import logging
 import xml.etree.ElementTree as ET
 from builtins import input
 from collections import namedtuple
 
-from LatLon import LatLon
 from dateutil.tz import tzlocal
-from geopy.distance import vincenty
 from lib.exif_read import ExifRead as EXIF
 from lib.exif_write import ExifEdit
 from lib.geo import interpolate_lat_lon
@@ -696,6 +695,7 @@ def correlate_manual(camera_obj, loglist = None, piclist = None, user_delta = Tr
     if loglist == None : loglist = camera_obj.log_list
     if piclist == None : piclist = camera_obj.image_list
     piclist = manual_timestamp(cam, loglist, piclist)
+    piclist_corrected = []
         
     for log_line, pic in zip(loglist, piclist):
         new_datetimeoriginal = log_line.log_timestamp
@@ -1012,7 +1012,7 @@ def correlate_log_and_pic(camera_obj, auto=True):
             print("2 : double diff backward deviation: ", backward[1])
             print("3 : nearest time deviation: ", nearest[1])
 
-            user_input = raw_input("The lowest deviation should be the better choice \n"
+            user_input = input("The lowest deviation should be the better choice \n"
                                    "Which algorithm do you want to use ? 1, 2 or 3 ? ")
             while True:
                 if int(user_input) == 1:
@@ -1047,9 +1047,10 @@ def correlate_log_and_pic(camera_obj, auto=True):
         #nearest, deviation = correlate_nearest_time_exlusive(camera_obj.log_list, camera_obj.image_list[:], user_delta = True)
         #piclist_corrected, deviation = correlate_manual(camera_obj, camera_obj.log_list, nearest, user_delta = True)
         #piclist_corrected, deviation = correlate_manual(camera_obj, camera_obj.log_list, camera_obj.image_list[:], user_delta = True)
-        #piclist_corrected, deviation = correlate_manual(camera_obj, camera_obj.log_list, single_cam_image_list, user_delta = True)
+        piclist_corrected, deviation = correlate_manual(camera_obj, camera_obj.log_list, single_cam_image_list, user_delta = True)
         #piclist_corrected, deviation = correlate_nearest_time_exclusive(camera_obj, camera_obj.log_list, camera_obj.image_list[:], user_delta = True)
-        piclist_corrected, deviation = correlate_nearest_time_exclusive(camera_obj, camera_obj.log_list, single_cam_image_list, user_delta = True)
+        
+        #piclist_corrected, deviation = correlate_nearest_time_exclusive(camera_obj, camera_obj.log_list, single_cam_image_list, user_delta = True)
             
     return piclist_corrected
 
@@ -1095,6 +1096,7 @@ def standard_deviation(list1):
     :param list1: list of values
     :return: standard deviation value"""
     # moyenne
+    
     moy = sum(list1, 0.0) / len(list1)
     # variance
     variance = [(x - moy) ** 2 for x in list1]
@@ -1166,16 +1168,19 @@ def geotag_from_gpx(piclist, gpx_file, offset_time=0, offset_bearing=0, offset_d
     for i, pic in enumerate(piclist):
         # add_exif_using_timestamp(filepath, filetime, gpx, time_offset, bearing_offset)
         # metadata = ExifEdit(filename)
+        #import ipdb; ipdb.set_trace()
         t = pic.New_DateTimeOriginal - datetime.timedelta(seconds=offset_time)
+        t = t.replace(tzinfo=tzlocal()) # <-- TEST pour cause de datetime aware vs naive
         
         try:
             lat, lon, bearing, elevation = interpolate_lat_lon(gpx, t)
             corrected_bearing = (bearing + offset_bearing) % 360
             # Apply offset to the coordinates if distance_offset exists
             if offset_distance != 0:
-                new_Coords = LatLon(lat, lon).offset(corrected_bearing, offset_distance / 1000)
-                lat = new_Coords.lat.decimal_degree
-                lon = new_Coords.lon.decimal_degree
+                #new_Coords = LatLon(lat, lon).offset(corrected_bearing, offset_distance / 1000)
+                #lat = new_Coords.lat.decimal_degree
+                #lon = new_Coords.lon.decimal_degree
+                lon, lat, unusedbackazimuth = (pyproj.Geod(ellps='WGS84').fwd(lon, lat, corrected_bearing, offset_distance))
             # Add coordinates, elevation and bearing to the New_Picture_infos namedtuple
             piclist[i] = pic._replace(Longitude=lon, Latitude=lat, Ele=elevation, ImgDirection=corrected_bearing)
 
@@ -1210,7 +1215,10 @@ def move_too_close_pic(piclists, min_distance):
         for i, pic in enumerate(piclist):
             try:
                 next_pic = piclist[i+1]
-                distance = vincenty((next_pic.Latitude, next_pic.Longitude), (pic.Latitude, pic.Longitude)).meters
+                wgs84_geod = Geod(ellps='WGS84')
+                azimuth1, azimuth2, distance = wgs84_geod.inv(next_pic.Longitude, next_pic.Latitude, pic.Longitude, pic.Latitude)
+               
+                #distance = vincenty((next_pic.Latitude, next_pic.Longitude), (pic.Latitude, pic.Longitude)).meters
                 distance = distance + dist_since_start
                 if distance < min_distance:
                     # print("distance = ", distance)
@@ -1292,7 +1300,7 @@ def write_josm_session(piclists, session_file_path, cam_names, gpx_file=None):
         gpx_layer.attrib = {"index": str(len(piclists) + 1), "name": gpx_file.split("\\")[-1], "type": "tracks",
                             "version": "0.1", "visible": "true"}
         gpx_file_layer = ET.SubElement(gpx_layer, "file")
-        gpx_file_layer.text = urlparse.urljoin('file:', urllib.pathname2url(gpx_file))
+        gpx_file_layer.text = urllib.parse.urljoin('file:', urllib.request.pathname2url(gpx_file))
 
     myxml = ET.ElementTree(root)
 
@@ -1308,17 +1316,16 @@ def open_session_in_josm(session_file_path, remote_port=8111):
     """Send the session file to Josm. "Remote control" and "open local files" must be enable in the Josm settings
      :param session_file_path: the session file path (.jos)
      :param remote_port: the port to talk to josm. Default is 8111"""
-    import urllib2
-    import urllib
+    import urllib.request, urllib.error, urllib.parse
     #TODO utiliser 127.0.0.1:8111/version pour vérifier si josm est en route et le remote actif.
     #TODO gérer les cas ou le chemin de fichier comporte des caractères accentués. L'idéal serait un passage
     # a python 3, mais je doute que les dépendances le gère correctement.
-    session_file_path = urllib.quote(session_file_path)
+    session_file_path = urllib.parse.quote(session_file_path)
 
     print("Opening the session in Josm....", end="")
     print("http://127.0.0.1:" + str(remote_port) + "/open_file?filename=" + session_file_path)
     try:
-        r = urllib2.urlopen("http://127.0.0.1:" + str(remote_port) + "/open_file?filename=" + session_file_path)
+        r = urllib.request.urlopen("http://127.0.0.1:" + str(remote_port) + "/open_file?filename=" + session_file_path)
         answer = r.read()
         print("Success!") if "OK" in answer else print("Error!")
         r.close()
@@ -1369,8 +1376,8 @@ def config_parse(profile_name):
     These parameters are used to automate the processing
     :param profile_name: Profile's name"""
 
-    import ConfigParser
-    config = ConfigParser.ConfigParser()
+    import configparser
+    config = configparser.ConfigParser()
     config.read(os.path.dirname(sys.argv[0]) + "\\profile.cfg")
 
     folder_string = config.get(profile_name, "folder_names")
@@ -1392,7 +1399,7 @@ def config_parse(profile_name):
         cam_log_position = config.get(profile_name, "cam_log_position")
         cam_log_position = [int(i.strip()) for i in cam_log_position.strip(",")]
     except:
-        cam_log_position = range(len(cam_names))
+        cam_log_position = list(range(len(cam_names)))
     
 
     return folder_string, cam_names, cam_log_position, cam_bearing, cam_log_count, distance_from_center, min_pic_distance
@@ -1447,7 +1454,9 @@ def compare_latlon(piclist1, piclist2, max_distance = 0):
     for pics in zip(piclist1, piclist2):
         pic1, pic2 = pics
         #try:
-        distance = vincenty((pic1.Latitude, pic1.Longitude), (pic2.Latitude, pic2.Longitude)).meters
+        wgs84_geod = Geod(ellps='WGS84')
+        azimuth1, azimuth2, distance = wgs84_geod.inv(pic2.Longitude, pic2.Latitude, pic1.Longitude, pic1.Latitude)
+        #distance = vincenty((pic1.Latitude, pic1.Longitude), (pic2.Latitude, pic2.Longitude)).meters
         
         if distance > max_distance:
             #print("{0} meters between {1} and {2}".format(distance, os.path.basename(pic1.path), os.path.basename(pic2.path)))
@@ -1535,7 +1544,7 @@ if __name__ == '__main__':
         print("=" * 80)
         input_time_offset = 0
         while True:
-            user_geo_input = raw_input("Apply a time offset and restart geotag? (value or n) : ")
+            user_geo_input = input("Apply a time offset and restart geotag? (value or n) : ")
             #TODO chercher pourquoi lorsqu'on avait des photos avec une géolocalisation OK, mais que volontairement
             # on applique un offset complètement en dehors de la plage horaire, la nouvelle correlation semble conserver
             # les Lat/Lon précédents.
@@ -1559,7 +1568,7 @@ if __name__ == '__main__':
     if args.compare:
         for cam in cam_group:
             max_distance = 1
-            user_input = raw_input("Enter the path to compare lat/lon with  {}:\n ".format(cam.name))
+            user_input = input("Enter the path to compare lat/lon with  {}:\n ".format(cam.name))
             piclist2 = list_geoimages(str(user_input))
             compare_result = compare_latlon(cam.new_image_list, piclist2, max_distance)
             for result in compare_result:
@@ -1568,8 +1577,9 @@ if __name__ == '__main__':
 
     # Write the new exif data in the pictures.
     print("=" * 80)
+
     if args.write_exif:
-        user_input = raw_input("Write the new exif data in the pictures? (y or n) : ")
+        user_input = input("Write the new exif data in the pictures? (y or n) : ")
         if user_input == "y":
             #remove pictures without lat/long
             #cam_group.filter_images(latlon = True)

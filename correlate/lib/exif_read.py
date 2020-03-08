@@ -4,7 +4,7 @@ import os
 import sys
 import exifread
 import datetime
-from geo import normalize_bearing
+from .geo import normalize_bearing
 import uuid
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..")))
@@ -344,8 +344,8 @@ class ExifRead:
                 if subrexif in self.tags:
                     vflag = True
             if not vflag:
-                print("Missing required EXIF tag: {0} for image {1}".format(
-                    rexif[0], self.filename))
+                print(("Missing required EXIF tag: {0} for image {1}".format(
+                    rexif[0], self.filename)))
                 return False
         return True
 

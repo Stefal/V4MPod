@@ -1,6 +1,36 @@
-EESchema Schematic File Version 4
+EESchema Schematic File Version 2
+LIBS:power
+LIBS:device
+LIBS:transistors
+LIBS:conn
+LIBS:linear
+LIBS:regul
+LIBS:74xx
+LIBS:cmos4000
+LIBS:adc-dac
+LIBS:memory
+LIBS:xilinx
+LIBS:microcontrollers
+LIBS:dsp
+LIBS:microchip
+LIBS:analog_switches
+LIBS:motorola
+LIBS:texas
+LIBS:intel
+LIBS:audio
+LIBS:interface
+LIBS:digital-audio
+LIBS:philips
+LIBS:display
+LIBS:cypress
+LIBS:siliconi
+LIBS:opto
+LIBS:atmel
+LIBS:contrib
+LIBS:valves
+LIBS:freetronics_schematic
 LIBS:Raspberry Cam Shield-cache
-EELAYER 26 0
+EELAYER 25 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
@@ -15,7 +45,7 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L Raspberry-Cam-Shield-rescue:Raspberry_Pi_2_3 J1
+L Raspberry_Pi_2_3 J1
 U 1 1 595E8DC5
 P 5250 2900
 F 0 "J1" H 5950 1650 50  0000 C CNN
@@ -26,7 +56,7 @@ F 3 "" H 5300 2750 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Raspberry-Cam-Shield-rescue:MCP23017 U1
+L MCP23017 U1
 U 1 1 595E8EE6
 P 9200 2950
 F 0 "U1" H 9100 3975 50  0000 R CNN
@@ -37,7 +67,7 @@ F 3 "" H 9450 3950 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:+3.3V #PWR01
+L +3.3V #PWR01
 U 1 1 595E9013
 P 5350 1600
 F 0 "#PWR01" H 5350 1450 50  0001 C CNN
@@ -48,7 +78,7 @@ F 3 "" H 5350 1600 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:+3.3V #PWR02
+L +3.3V #PWR02
 U 1 1 595E902B
 P 9200 1950
 F 0 "#PWR02" H 9200 1800 50  0001 C CNN
@@ -59,7 +89,7 @@ F 3 "" H 9200 1950 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:+3.3V #PWR03
+L +3.3V #PWR03
 U 1 1 595E9045
 P 9700 2100
 F 0 "#PWR03" H 9700 1950 50  0001 C CNN
@@ -70,7 +100,7 @@ F 3 "" H 9700 2100 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GNDA #PWR04
+L GNDA #PWR04
 U 1 1 595E90EB
 P 5550 4350
 F 0 "#PWR04" H 5550 4100 50  0001 C CNN
@@ -81,7 +111,7 @@ F 3 "" H 5550 4350 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GNDA #PWR05
+L GNDA #PWR05
 U 1 1 595E9159
 P 9200 4200
 F 0 "#PWR05" H 9200 3950 50  0001 C CNN
@@ -92,7 +122,7 @@ F 3 "" H 9200 4200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Raspberry-Cam-Shield-rescue:SW_PUSHBUTTON SW1
+L SW_PUSHBUTTON SW1
 U 1 1 595E9858
 P 7750 2250
 F 0 "SW1" H 7600 2360 50  0000 C CNN
@@ -103,7 +133,7 @@ F 3 "" H 7750 2250 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Raspberry-Cam-Shield-rescue:SW_PUSHBUTTON SW2
+L SW_PUSHBUTTON SW2
 U 1 1 595E98E7
 P 7750 2550
 F 0 "SW2" H 7600 2660 50  0000 C CNN
@@ -114,7 +144,7 @@ F 3 "" H 7750 2550 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Raspberry-Cam-Shield-rescue:SW_PUSHBUTTON SW3
+L SW_PUSHBUTTON SW3
 U 1 1 595E9904
 P 7750 2850
 F 0 "SW3" H 7600 2960 50  0000 C CNN
@@ -125,7 +155,7 @@ F 3 "" H 7750 2850 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Raspberry-Cam-Shield-rescue:SW_PUSHBUTTON SW4
+L SW_PUSHBUTTON SW4
 U 1 1 595E9921
 P 7750 3150
 F 0 "SW4" H 7600 3260 50  0000 C CNN
@@ -136,7 +166,7 @@ F 3 "" H 7750 3150 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Raspberry-Cam-Shield-rescue:SW_PUSHBUTTON SW5
+L SW_PUSHBUTTON SW5
 U 1 1 595E9940
 P 7750 3450
 F 0 "SW5" H 7600 3560 50  0000 C CNN
@@ -147,7 +177,7 @@ F 3 "" H 7750 3450 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Raspberry-Cam-Shield-rescue:SW_PUSHBUTTON SW6
+L SW_PUSHBUTTON SW6
 U 1 1 595E9961
 P 7750 3750
 F 0 "SW6" H 7600 3860 50  0000 C CNN
@@ -158,7 +188,7 @@ F 3 "" H 7750 3750 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Raspberry-Cam-Shield-rescue:SW_PUSHBUTTON SW7
+L SW_PUSHBUTTON SW7
 U 1 1 595E99CC
 P 7750 4050
 F 0 "SW7" H 7600 4160 50  0000 C CNN
@@ -169,7 +199,7 @@ F 3 "" H 7750 4050 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Raspberry-Cam-Shield-rescue:SW_PUSHBUTTON SW8
+L SW_PUSHBUTTON SW8
 U 1 1 595E99F3
 P 7750 4400
 F 0 "SW8" H 7600 4510 50  0000 C CNN
@@ -180,7 +210,7 @@ F 3 "" H 7750 4400 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GNDA #PWR06
+L GNDA #PWR06
 U 1 1 595EA441
 P 7450 4700
 F 0 "#PWR06" H 7450 4450 50  0001 C CNN
@@ -191,7 +221,7 @@ F 3 "" H 7450 4700 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Raspberry-Cam-Shield-rescue:DIL24 J3
+L DIL24 J3
 U 1 1 595F2CBA
 P 2550 1550
 F 0 "J3" H 2550 1650 50  0000 C CNN
@@ -204,7 +234,7 @@ $EndComp
 Text Label 3050 1000 0    60   ~ 0
 Battery_(5v)
 $Comp
-L power:GNDA #PWR07
+L GNDA #PWR07
 U 1 1 595F3047
 P 3250 1400
 F 0 "#PWR07" H 3250 1150 50  0001 C CNN
@@ -219,7 +249,7 @@ PPS
 Text Label 2150 2100 0    60   ~ 0
 TX
 $Comp
-L Raspberry-Cam-Shield-rescue:Screw_Terminal_1x02 J5
+L Screw_Terminal_1x02 J5
 U 1 1 595F6301
 P 2100 2950
 F 0 "J5" H 2100 3200 50  0000 C TNN
@@ -230,7 +260,7 @@ F 3 "" H 2075 2950 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GNDA #PWR08
+L GNDA #PWR08
 U 1 1 595F65D0
 P 2300 3150
 F 0 "#PWR08" H 2300 2900 50  0001 C CNN
@@ -241,7 +271,7 @@ F 3 "" H 2300 3150 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Raspberry-Cam-Shield-rescue:Screw_Terminal_1x02 J6
+L Screw_Terminal_1x02 J6
 U 1 1 595F6B0A
 P 7050 2950
 F 0 "J6" H 7050 3200 50  0000 C TNN
@@ -252,7 +282,7 @@ F 3 "" H 7025 2950 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L Raspberry-Cam-Shield-rescue:CONN_01X08 J4
+L CONN_01X08 J4
 U 1 1 595F6E30
 P 1850 4350
 F 0 "J4" H 1850 4800 50  0000 C CNN
@@ -279,7 +309,7 @@ RST
 Text Label 2250 4000 2    60   ~ 0
 LED
 $Comp
-L power:GNDA #PWR09
+L GNDA #PWR09
 U 1 1 595F7339
 P 2050 4850
 F 0 "#PWR09" H 2050 4600 50  0001 C CNN
@@ -290,7 +320,7 @@ F 3 "" H 2050 4850 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:+3.3V #PWR010
+L +3.3V #PWR010
 U 1 1 595F73CC
 P 2450 4600
 F 0 "#PWR010" H 2450 4450 50  0001 C CNN
@@ -367,9 +397,9 @@ Wire Wire Line
 Wire Wire Line
 	8150 3450 8050 3450
 Wire Wire Line
-	9200 3950 9200 4000
+	9200 3950 9200 4200
 Wire Wire Line
-	9700 3550 9700 3650
+	9700 3550 9700 4000
 Connection ~ 9700 3650
 Wire Wire Line
 	9700 4000 9200 4000
@@ -409,7 +439,7 @@ Wire Wire Line
 Wire Wire Line
 	3250 1300 3250 1400
 Wire Wire Line
-	1850 2100 2050 2100
+	1850 2100 2200 2100
 Wire Wire Line
 	2050 2100 2050 800 
 Wire Wire Line
@@ -428,7 +458,9 @@ Wire Wire Line
 	3800 2300 3800 2400
 Wire Wire Line
 	3800 2400 4350 2400
+Connection ~ 8050 2150
 Connection ~ 7450 2250
+Connection ~ 7450 2350
 Wire Wire Line
 	4350 3100 2700 3100
 Wire Wire Line
@@ -438,7 +470,7 @@ Wire Wire Line
 Wire Wire Line
 	2300 3050 2300 3150
 Wire Wire Line
-	7450 2050 7450 2250
+	7450 2050 7450 4700
 Wire Wire Line
 	8050 2850 8050 2700
 Wire Wire Line
@@ -506,7 +538,7 @@ PIO3
 Text Label 1350 1600 0    60   ~ 0
 PIO2
 $Comp
-L power:+3.3V #PWR011
+L +3.3V #PWR011
 U 1 1 595F9436
 P 650 1300
 F 0 "#PWR011" H 650 1150 50  0001 C CNN
@@ -517,7 +549,7 @@ F 3 "" H 650 1300 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L power:GNDA #PWR012
+L GNDA #PWR012
 U 1 1 595F9468
 P 600 1900
 F 0 "#PWR012" H 600 1650 50  0001 C CNN
@@ -528,7 +560,7 @@ F 3 "" H 600 1900 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	600  1400 650  1400
+	600  1400 850  1400
 Wire Wire Line
 	1350 1300 1850 1300
 Wire Wire Line
@@ -596,7 +628,7 @@ NoConn ~ 1350 1600
 Wire Wire Line
 	5550 4200 5550 4350
 $Comp
-L Raspberry-Cam-Shield-rescue:DIL8 J2
+L DIL8 J2
 U 1 1 595FB74A
 P 1000 1450
 F 0 "J2" H 1000 1700 50  0000 C CNN
@@ -616,7 +648,7 @@ Wire Wire Line
 Wire Wire Line
 	1650 1400 1650 1000
 $Comp
-L Raspberry-Cam-Shield-rescue:BUZZER U2
+L BUZZER U2
 U 1 1 595FC8D4
 P 3400 2600
 F 0 "U2" H 3350 2350 70  0000 L BNN
@@ -633,7 +665,7 @@ Wire Wire Line
 Wire Wire Line
 	3750 2550 3550 2550
 $Comp
-L power:GNDA #PWR013
+L GNDA #PWR013
 U 1 1 595FC9AE
 P 3550 2750
 F 0 "#PWR013" H 3550 2500 50  0001 C CNN
@@ -645,32 +677,4 @@ F 3 "" H 3550 2750 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	3550 2650 3550 2750
-Wire Wire Line
-	9700 3650 9700 3750
-Wire Wire Line
-	9200 4000 9200 4200
-Wire Wire Line
-	9700 3750 9700 4000
-Wire Wire Line
-	7450 2550 7450 2850
-Wire Wire Line
-	7450 2850 7450 3050
-Wire Wire Line
-	7450 3150 7450 3450
-Wire Wire Line
-	7450 3450 7450 3750
-Wire Wire Line
-	7450 3750 7450 4050
-Wire Wire Line
-	7450 4050 7450 4400
-Wire Wire Line
-	7450 4400 7450 4700
-Wire Wire Line
-	7450 3050 7450 3150
-Wire Wire Line
-	2050 2100 2200 2100
-Wire Wire Line
-	650  1400 850  1400
-Wire Wire Line
-	7450 2250 7450 2550
 $EndSCHEMATC

@@ -4,7 +4,7 @@ import piexif
 
 from geo import decimal_to_dms
 
-from .error import print_error
+#from .error import print_error
 
 
 class ExifEdit(object):

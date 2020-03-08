@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name Raspberry-Cam-Shield-rescue)(type Legacy)(uri "${KIPRJMOD}/Raspberry Cam Shield-rescue.lib")(options "")(descr ""))
+)
