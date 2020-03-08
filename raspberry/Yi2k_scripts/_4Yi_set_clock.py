@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# encoding: windows-1250
 #
 # Res Andy 
 
@@ -115,6 +114,6 @@ srv4.close()
 
 print("Time sets to {}".format(myLocTime))
 total_time = time.time() - start_time
-print("temps écoulé : {}".format(total_time))
+print("temps Ã©coulÃ© : {}".format(total_time))
 
 

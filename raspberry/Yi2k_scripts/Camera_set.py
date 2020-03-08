@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# encoding: windows-1250
 #
 # Res Andy 
 

@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# encoding: windows-1250
 #
 # Res Andy 
 
@@ -139,4 +138,4 @@ srv3.close()
 srv4.close()
 
 total_time = time.time() - start_time
-print("temps écoulé : {}".format(total_time))
+print("temps Ã©coulÃ© : {}".format(total_time))
