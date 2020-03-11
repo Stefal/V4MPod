@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
 import smbus
@@ -14,7 +15,7 @@ import Adafruit_Nokia_LCD as LCD
 import Adafruit_GPIO.SPI as SPI
 import lcd_menu as menu
 
-import queue
+from queue import Queue
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
@@ -311,7 +312,7 @@ except:
 # List of command names (and formats for their associated arguments). These must
 # be in the same order as in the sketch.
 
-def takePic(cam, queue, pic_id=1):
+def takePic(cam, log_queue, pic_id=1):
     timestamp=time.time()
     c.send("KTakepic", cam, pic_id)
     pic_return = c.receive(arg_formats="bLI")
@@ -327,7 +328,7 @@ def takePic(cam, queue, pic_id=1):
     #version avec time.gmtime
     #print(pic_return[0], pic_return[1][1:3], bin(pic_return[1][0])[2:].zfill(8), time.gmtime(pic_return[2]))
 
-    queue.put(str(timestamp) + "," + str(pic_return) + "," + str(bin(cam)) + "," + status + "\n")
+    log_queue.put(str(timestamp) + "," + str(pic_return) + "," + str(bin(cam)) + "," + status + "\n")
     
     global pic_count
     pic_count += 1
@@ -556,7 +557,7 @@ timelapsethread = None
 Timelapse = False
 cams_up = False
 pic_count = 0
-logqueue=queue.Queue(maxsize=0)
+logqueue=Queue(maxsize=0)
 back=menu.create_blanck_img()
 img_menu_top = menu.create_full_img(menuA[0])
 current_img=menu.select_line(img_menu_top, back, 1, disp)
