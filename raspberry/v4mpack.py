@@ -5,7 +5,7 @@ import smbus
 import time
 import datetime
 import RPi.GPIO as GPIO
-import PyCmdMessenger
+import Yi2k_ctrl
 import subprocess
 import gpsd
 import threading
@@ -127,7 +127,7 @@ GPIO.setup(hall_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def hall_callback(hall_pin):
   print('Edge detected on pin %s' %hall_pin)
-  takePic(cam_range, logqueue)
+  cams_takePic(MyCams,logqueue, cam_range)
   lcd_write_text("Picture", 1)
 
 GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
@@ -187,17 +187,16 @@ def handleKeyPress():
     print(bin(KeyValue))
     if KeyValue & 0b1:
         print("Power up button")
-        power_up(cam_range)
+        cams_power_up(cam_range)
         lcd_write_text("Powering up...", 10)
         lcd_write_text("Cams ready", 5)
     elif KeyValue & 0b10:
         print("Power down button")
-        power_up(cam_range)
-        lcd_write_text("Powering down..", 5)
-        
+        cams_power_down(cam_range)
+        lcd_write_text("Pwr cam down..", 5)     
     elif KeyValue & 0b100:
         print("Shutter button")
-        takePic(cam_range, logqueue, pic_count)
+        cams_takePic(MyCams,logqueue, pic_count, cam_range)
         #lcd_write_text("Picture", 1)
     elif KeyValue & 0b1000:
         print("Select button")
@@ -215,9 +214,6 @@ def handleKeyPress():
     bus.read_byte_data(DEVICE, INTCAPB)
     bus.read_byte_data(DEVICE, INTCAPA)
 
-      
-      
-
 # Hardware SPI usage:
 disp = LCD.PCD8544(DC, RST, spi=SPI.SpiDev(SPI_PORT, SPI_DEVICE, max_speed_hz=4000000))
 
@@ -230,8 +226,6 @@ disp.begin(contrast=50)
 # Clear display.
 disp.clear()
 disp.display()
-
-
 
 def splash_boot(pause_time=5):
     # Create blank image for drawing.
@@ -284,66 +278,33 @@ def lcd_write_text(lcdtext, timeout=None):
         disp.display()
 
 def beep(duration=0.2, pause=0.2, repeat=0):
-    for rpt in range(repeat +1):
+    for _rpt in range(repeat +1):
         GPIO.output(buzzer_pin,1)
         time.sleep(duration)
         GPIO.output(buzzer_pin,0)
         time.sleep(pause)
 
-# Initialize an ArduinoBoard instance.  This is where you specify baud rate and
-# serial timeout.  If you are using a non ATmega328 board, you might also need
-# to set the data sizes (bytes for integers, longs, floats, and doubles). 
-try: 
-    arduino = PyCmdMessenger.ArduinoBoard("/dev/ttyACM0",baud_rate=115200, timeout=4)
-    commands = [
-            ["KCommandList", ""],
-            ["KTakepic", "bI"],
-            ["KPower_up", "b"],
-            ["KPower_down", "b"],
-            ["KWake_up", ""]
-            ]
-    # Initialize the messenger
-    c = PyCmdMessenger.CmdMessenger(arduino,commands)
-
-except:
-    print("Impossible de se connecter à l'Arduino")
-    
-
-# List of command names (and formats for their associated arguments). These must
-# be in the same order as in the sketch.
-
-def takePic(cam, log_queue, pic_id=1):
-    timestamp=time.time()
-    c.send("KTakepic", cam, pic_id)
-    pic_return = c.receive(arg_formats="bLI")
-    #print(pic_return)
-    if (cam ^ pic_return[1][0]) != 0:
-        beep(0.4, 0.1, 2)
-        status="cam error"
-    else:
+def cams_takePic(cameras_obj, log_queue, cams=None, pic_id=1):
+    pic_answer = cameras_obj.takePic(cams)
+    #pic_answer is a tuple: timestamp, pic_return, cam, status
+    log_queue.put(str(pic_answer[0]) + "," + str(pic_answer[1]) + "," + str(pic_answer[2]) + "," + pic_answer[3] + "\n")
+    if pic_answer[3] == "ok":
         beep(0.1)
-        status="ok"
-    #version avec datetime    
-    print(pic_return[0], pic_return[1][1:3], bin(pic_return[1][0])[2:].zfill(8), datetime.datetime.fromtimestamp(pic_return[2]).strftime('%H:%M:%S.%f')[:-3])
-    #version avec time.gmtime
-    #print(pic_return[0], pic_return[1][1:3], bin(pic_return[1][0])[2:].zfill(8), time.gmtime(pic_return[2]))
-
-    log_queue.put(str(timestamp) + "," + str(pic_return) + "," + str(bin(cam)) + "," + status + "\n")
+    else:
+        beep(0.4, 0.1, 2)
     
-    global pic_count
-    pic_count += 1
-    return pic_return
+    return pic_answer[1]
+
 
 def picLoop(cam, pic_nbr, pause, logqueue):
     t = threading.currentThread()
     for i in range(pic_nbr-1):
         if  getattr(t, "do_run", True):
-            takePic(cam, logqueue, i)
+            cams_takePic(MyCams, logqueue, cam_range, i)
             time.sleep(pause)
         else:
             break
         
-
 def start_Timelapse():
     global timelapsethread
     timelapsethread=threading.Thread(target=picLoop, args=(cam_range, 100000, 1.3, logqueue,), name="Picloop")
@@ -353,22 +314,20 @@ def stop_Timelapse():
     global timelapsethread
     timelapsethread.do_run = False
 
+def cams_arduino_connect(camera_obj):
+    timestamp, answer = camera_obj.connect()
+    logfile.write(str(timestamp) + "," + "Arduino connection: " + "," + str(answer) + "\n")
+    return answer
 
-def power_up(cam=0b00000001):
-    if cams_up == False:
-        c.send("KPower_up", cam)
-        time.sleep(6)
-        start_return = c.receive(arg_formats="b")
-        logfile.write(str(start_return) + "\n")
-        global cams_up
-        cams_up = True
-        print(start_return)
-    
-def power_down(cam=0b00000001):
-    c.send("KPower_down", cam)
-    down_return=c.receive()
-    logfile.write(str(down_return) + "\n")
-    return c.receive()
+def cams_power_up(cameras_obj, cams=None):
+    timestamp, answer, cams = cameras_obj.power_up(cams)
+    logfile.write(str(timestamp) + "," + str(answer) + "," + str(cams) + "\n")
+    return answer
+
+def cams_power_down(cameras_obj, cams=None):
+    timestamp, answer, cams = cameras_obj.power_down(cams)
+    logfile.write(str(timestamp) + "," + "Power down" + "," + str(cams) + "\n")
+    return answer
 
 def start_gnss_log():
     subprocess.call(["gpspipe -d -R -o ~/Documents/Sessions_V4MPOD/`date +%Y-%m-%d_%H.%M.%S`.nmea"], shell=True)
@@ -408,22 +367,22 @@ def gnss_localization():
     print(packet.position())
     print(packet.time)
 
-def _4Yi_set_clock():
-    try:
-        runpy.run_path("/home/pi/V4MPod/raspberry/Yi2k_scripts/_4Yi_set_clock.py")
-        logfile.write("Yi set clock: OK" + "\n")
+def cams_set_clocks(cameras_obj):
+    timestamp, answer = cameras_obj.set_clocks()
+    if answer:
+        logfile.write(str(timestamp) + "," + "Yi set clock: OK" + "\n")
         beep(0.1)
-    except:
-        logfile.write("Yi set clock: Can't set clock, communication error" + "\n")
+    else:
+        logfile.write(str(timestamp) + "," + "Yi set clock: Can't set clock, communication error" + "\n")
         beep(0.4, 0.1, 2)
 
-def _4Yi_set_settings():
-    try:
-        runpy.run_path("/home/pi/V4MPod/raspberry/Yi2k_scripts/_4Yi_set_param.py")
-        logfile.write("Yi send settings: OK" + "\n")
+def cams_send_settings(cameras_obj):
+    answer = cameras_obj.send_settings()
+    if answer[1]:
+        logfile.write(str(answer[0]) + "," + "Yi send settings: OK" + "\n")
         beep(0.1)
-    except:
-        logfile.write("Yi send settings: Can't send settings, communication error" + "\n")
+    else:
+        logfile.write(str(answer[0]) + "," + "Yi send settings: Can't send settings, communication error" + "\n")
         beep(0.4, 0.1, 2)
 
 def exit_loop():
@@ -464,6 +423,7 @@ def open_file():
 
 
 def new_session():
+    #TODO vérifier l'état du compteur de photo après création d'une nouvelle session
     global logfile
     logfile.write("Close logfile" + "\n")
     logfile.close()
@@ -526,16 +486,16 @@ def menu_next_line():
         None
 
 
-menuA = [[{"Name":"Take Pic", "Func":"takePic", "Param":"cam_range, logqueue"},
-{"Name":"Power up Cams", "Func":"power_up", "Param":"cam_range"},
- {"Name":"Power down Cams", "Func":"power_down", "Param":"cam_range"},
+menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, cam_range"},
+{"Name":"Power up Cams", "Func":"cams_power_up", "Param":"MyCams, cam_range"},
+ {"Name":"Power down Cams", "Func":"cams_power_down", "Param":"MyCams, cam_range"},
  {"Name":"Start TimeLapse", "Func":"start_Timelapse", "Param":""},
  {"Name":"Stop TimeLapse", "Func":"stop_Timelapse", "Param":""},
  {"Name":"Start cam log", "Func":"logfile=open_file", "Param":""},
  {"Name":"Stop Gnss log", "Func":"stop_gnss_log", "Param":""},
  {"Name":"GNSS Info", "Func":"gnss_localization", "Param":""},
- {"Name":"Set Yi settings", "Func":"_4Yi_set_settings", "Param":""},
- {"Name":"Set Yi clock", "Func":"_4Yi_set_clock", "Param":""},
+ {"Name":"Set Yi settings", "Func":"cams_send_settings", "Param":"MyCams"},
+ {"Name":"Set Yi clock", "Func":"cams_set_clocks", "Param":"MyCams"},
  {"Name":"Start new session", "Func":"new_session", "Param":""},
  {"Name":"Exit", "Func":"exit_loop", "Param":""},
  {"Name":"Power off PI", "Func":"power_down_pi", "Param":""},
@@ -563,6 +523,8 @@ img_menu_top = menu.create_full_img(menuA[0])
 current_img=menu.select_line(img_menu_top, back, 1, disp)
 start_gnss_log()
 logfile=open_file()
+MyCams = Yi2k_ctrl.Yi2K_cam_ctrl('/dev/ttyACM0', '115200', cam_range)
+cams_arduino_connect(MyCams)
 
 
 # Loop until user presses CTRL-C
@@ -584,7 +546,7 @@ while keepRunning:
         exec(menuA[0][menuA[-2][0]]["Func"] + "(" + menuA[0][menuA[-2][0]]["Param"] +")")
         print("exec done")
 
-exit_prog()
-sys.exit()
+#exit_prog()
+#sys.exit()
 
   
