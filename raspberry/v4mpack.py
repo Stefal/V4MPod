@@ -10,6 +10,7 @@ import subprocess
 import gpsd
 import threading
 import runpy
+import argparse
 
 import Adafruit_Nokia_LCD as LCD
 import Adafruit_GPIO.SPI as SPI
@@ -384,6 +385,18 @@ def cams_send_settings(cameras_obj):
     else:
         logfile.write(str(answer[0]) + "," + "Yi send settings: Can't send settings, communication error" + "\n")
         beep(0.4, 0.1, 2)
+        
+
+def arg_parser():
+    """parse the command line"""
+    parser = argparse.ArgumentParser(description="Main V4MPOD software")
+    parser.add_argument("-i", "--interactive", help="Interactive mode to be able to use the command line", action="store_true")
+
+    args = parser.parse_args()
+    if args.interactive:
+        print("entering interactive mode")
+        global keepRunning
+        keepRunning=False
 
 def exit_loop():
     global keepRunning
@@ -411,6 +424,9 @@ def exit_prog():
     #except:
     #    print("Erreur en quittant")
     print("Exiting program B")
+    print("Exiting V4MPOD")
+    sys.exit()
+
     
 def open_file():
     global flushthread
@@ -497,7 +513,7 @@ menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, 
  {"Name":"Set Yi settings", "Func":"cams_send_settings", "Param":"MyCams"},
  {"Name":"Set Yi clock", "Func":"cams_set_clocks", "Param":"MyCams"},
  {"Name":"Start new session", "Func":"new_session", "Param":""},
- {"Name":"Exit", "Func":"exit_loop", "Param":""},
+ {"Name":"Exit", "Func":"exit_prog", "Param":""},
  {"Name":"Power off PI", "Func":"power_down_pi", "Param":""},
 
  ],
@@ -526,10 +542,12 @@ logfile=open_file()
 MyCams = Yi2k_ctrl.Yi2K_cam_ctrl('/dev/ttyACM0', '115200', cam_range)
 cams_arduino_connect(MyCams)
 
+#check if interactive mode is enabled
+arg_parser()
+
+
 
 # Loop until user presses CTRL-C
-
-
 while keepRunning:
     if Keypressed:
         handleKeyPress()
@@ -546,7 +564,3 @@ while keepRunning:
         exec(menuA[0][menuA[-2][0]]["Func"] + "(" + menuA[0][menuA[-2][0]]["Param"] +")")
         print("exec done")
 
-#exit_prog()
-#sys.exit()
-
-  

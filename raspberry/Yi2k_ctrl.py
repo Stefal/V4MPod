@@ -16,6 +16,7 @@ class Yi2K_cam_ctrl(object):
         self.cams_on = 0
         self.last_sht_time = 0
         self.min_interval = 1.7
+        self.standby_time = 60
         self.pic_count = 0
         self.shutter_error = 0
         self.c = None
@@ -56,6 +57,17 @@ class Yi2K_cam_ctrl(object):
         #TODO ajouter un retard si le délai entre le déclenchement précédent
         # et le nouveau est trop court.
         timestamp=time.time()
+
+        #if the new takePic is too "far in time" from the precedent one, the camera are probably in standby mode
+        #We need to wake up them, and one solution is to force sync their clocks
+        #BON en fait, non, ça ne fonctionne pas, mais je laisse la resynchro quand même pour le moment.
+        if timestamp - self.last_sht_time > self.standby_time:
+            self.set_clocks()
+            print("set clocks")
+            timestamp=time.time()
+
+        #If the new takePic is too close to the precedent one, the camera won't respond
+        #So we need to wait some
         if timestamp - self.last_sht_time < self.min_interval:
             time.sleep(abs(timestamp - self.last_sht_time - self.min_interval))
             timestamp=time.time()
