@@ -1,0 +1,12 @@
+[Unit]
+Description=V4MPOD script
+
+[Service]
+ExecStart=/home/pi/start_v4mpod.sh
+User=pi
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=V4MPOD_script
+
+[Install]
+WantedBy=multi-user.target
