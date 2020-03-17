@@ -335,12 +335,12 @@ def cams_power_down(cameras_obj, cams=None):
 
 def start_gnss_log(gnss_session_name):
     try:
-        now = datetime.datetime.now
+        now = datetime.datetime.now()
         gnss_filename = os.path.expanduser("~") + "/Documents/Sessions_V4MPOD/gnss_log_" + str(gnss_session_name) + "_" + now.strftime("%Y-%m-%d_%H.%M.%S") + ".nmea"
-        subprocess.call(["gpspipe -d -R -o" + str(gnss_file)], shell=True)
-    except:
-        print("error")
-        #TODO renvoyer une erreur plus explicite
+        subprocess.call(["gpspipe -d -R -o" + str(gnss_filename)], shell=True)
+    except Exception as e:
+        print("error during starting gnss log")
+        logfile.write("Error during starting gnss log: {}".format(str(e)))
         return False
     return gnss_filename
     
@@ -443,7 +443,7 @@ def open_file(log_session_name):
     global flushthread
     now=datetime.datetime.now()
     log_filename = os.path.expanduser("~") + "/Documents/Sessions_V4MPOD/cam_log_" + str(log_session_name) + "_" + now.strftime("%Y-%m-%d_%H.%M.%S") + ".log"
-    logfile=open(filename, "w")
+    logfile=open(log_filename, "w")
     flushthread=threading.Thread(target=flush_log, args=(logqueue,), name="flushlog")
     flushthread.start()
     return logfile
@@ -454,11 +454,18 @@ def new_session(session_name=None):
     global logfile
     #remove whitespace in session_name
     session_name = "_".join(session_name.split())
-    logfile.write("Close logfile" + "\n")
-    logfile.close()
-    flushthread.do_run = False
-    #stop gnss log
-    stop_gnss_log()
+    #Closing current logfile if it exists
+    try:
+        logfile.write("Close logfile" + "\n")
+        logfile.close()
+        flushthread.do_run = False
+        #stop gnss log
+        stop_gnss_log()
+    except NameError:
+        print("logfile doesn't exists")
+    except Exception as e:
+        print("Error: {}".format(e))
+    
     #start new logfile
     logfile = open_file(session_name)
     #start new gnss log
@@ -531,7 +538,11 @@ def web_pwr_down():
 
 @app.route('/status')
 def web_status():
-    pass
+    #cam_range = str(cam_range)
+    cam_status = str(MyCams.cams_on)
+    pic_count = str(MyCams.pic_count)
+    error = str(MyCams.shutter_error)
+    return cam_status + pic_count + error
 
 menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, cam_range"},
 {"Name":"Power up Cams", "Func":"cams_power_up", "Param":"MyCams, cam_range"},
@@ -568,13 +579,12 @@ logqueue=Queue(maxsize=0)
 back=menu.create_blanck_img()
 img_menu_top = menu.create_full_img(menuA[0])
 current_img=menu.select_line(img_menu_top, back, 1, disp)
-start_gnss_log()
-logfile=open_file()
+new_session("première_session")
 MyCams = Yi2k_ctrl.Yi2K_cam_ctrl('/dev/ttyACM0', '115200', cam_range)
 cams_arduino_connect(MyCams)
 #check if interactive mode is enabled
 arg_parser()
-threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread").start()
+threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
 #todo mode deamon pour le thread ??
 
 
