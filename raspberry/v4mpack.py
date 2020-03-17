@@ -333,8 +333,16 @@ def cams_power_down(cameras_obj, cams=None):
     logfile.write(str(timestamp) + "," + "Power down" + "," + str(cams) + "\n")
     return answer
 
-def start_gnss_log():
-    subprocess.call(["gpspipe -d -R -o ~/Documents/Sessions_V4MPOD/`date +%Y-%m-%d_%H.%M.%S`.nmea"], shell=True)
+def start_gnss_log(gnss_session_name):
+    try:
+        now = datetime.datetime.now
+        gnss_filename = os.path.expanduser("~") + "/Documents/Sessions_V4MPOD/gnss_log_" + str(gnss_session_name) + "_" + now.strftime("%Y-%m-%d_%H.%M.%S") + ".nmea"
+        subprocess.call(["gpspipe -d -R -o" + str(gnss_file)], shell=True)
+    except:
+        print("error")
+        #TODO renvoyer une erreur plus explicite
+        return False
+    return gnss_filename
     
 def stop_gnss_log():
     subprocess.call(["killall", "gpspipe"])
@@ -431,28 +439,30 @@ def exit_prog():
     sys.exit()
 
     
-def open_file():
+def open_file(log_session_name):
     global flushthread
     now=datetime.datetime.now()
-    filename = os.path.expanduser("~") + "/Documents/Sessions_V4MPOD/cam_log_" + now.strftime("%Y-%m-%d_%H.%M.%S") + ".log"
+    log_filename = os.path.expanduser("~") + "/Documents/Sessions_V4MPOD/cam_log_" + str(log_session_name) + "_" + now.strftime("%Y-%m-%d_%H.%M.%S") + ".log"
     logfile=open(filename, "w")
     flushthread=threading.Thread(target=flush_log, args=(logqueue,), name="flushlog")
     flushthread.start()
     return logfile
 
 
-def new_session():
+def new_session(session_name=None):
     #TODO vérifier l'état du compteur de photo après création d'une nouvelle session
     global logfile
+    #remove whitespace in session_name
+    session_name = "_".join(session_name.split())
     logfile.write("Close logfile" + "\n")
     logfile.close()
     flushthread.do_run = False
     #stop gnss log
     stop_gnss_log()
     #start new logfile
-    logfile = open_file()
+    logfile = open_file(session_name)
     #start new gnss log
-    start_gnss_log()
+    start_gnss_log(session_name)
 
 def flush_log(logqueue):
     #since Python 3.4 file are inheritable. I think it's why
@@ -512,12 +522,12 @@ def web_index():
 @app.route('/pwr_up')
 def web_pwr_up():
     answer = cams_power_up(MyCams, cam_range)
-    return answer
+    return str(answer)
 
 @app.route('/pwr_down')
 def web_pwr_down():
     answer = cams_power_down(MyCams, cam_range)
-    return answer
+    return str(answer)
 
 @app.route('/status')
 def web_status():
@@ -564,7 +574,7 @@ MyCams = Yi2k_ctrl.Yi2K_cam_ctrl('/dev/ttyACM0', '115200', cam_range)
 cams_arduino_connect(MyCams)
 #check if interactive mode is enabled
 arg_parser()
-threading.Thread(target=app.run).start()
+threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread").start()
 #todo mode deamon pour le thread ??
 
 
