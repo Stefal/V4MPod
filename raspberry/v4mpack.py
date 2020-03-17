@@ -20,6 +20,9 @@ from queue import Queue
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
+from flask import Flask, render_template, url_for, flash
+
+app = Flask(__name__)
 
 cam_range=0b00001111
 global cams_up
@@ -501,6 +504,24 @@ def menu_next_line():
     except:
         None
 
+@app.route('/')
+@app.route('/index')
+def web_index():
+    pass
+
+@app.route('/pwr_up')
+def web_pwr_up():
+    answer = cams_power_up(MyCams, cam_range)
+    return answer
+
+@app.route('/pwr_down')
+def web_pwr_down():
+    answer = cams_power_down(MyCams, cam_range)
+    return answer
+
+@app.route('/status')
+def web_status():
+    pass
 
 menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, cam_range"},
 {"Name":"Power up Cams", "Func":"cams_power_up", "Param":"MyCams, cam_range"},
@@ -541,10 +562,10 @@ start_gnss_log()
 logfile=open_file()
 MyCams = Yi2k_ctrl.Yi2K_cam_ctrl('/dev/ttyACM0', '115200', cam_range)
 cams_arduino_connect(MyCams)
-
 #check if interactive mode is enabled
 arg_parser()
-
+threading.Thread(target=app.run).start()
+#todo mode deamon pour le thread ??
 
 
 # Loop until user presses CTRL-C
