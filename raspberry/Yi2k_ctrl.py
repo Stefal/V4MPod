@@ -3,16 +3,18 @@ import PyCmdMessenger
 import time
 import datetime
 import runpy
+from os import system
 
 class Yi2K_cam_ctrl(object):
     # This class control the Yi2K with an arduino where all camera are connected.
     #TODO: Stocker l'état éteint ou allumé des caméras pour éviter de basculer en mode
     # vidéo par inadvertance.
 
-    def __init__(self, ardu_serial, ardu_baud, cams_range):
+    def __init__(self, ardu_serial, ardu_baud, cams_range, cams_ip=[]):
         self.ardu_serial = ardu_serial
         self.ardu_baud = ardu_baud
         self.cams_range = cams_range
+        self.cams_ip = cams_ip
         self.cams_on = 0
         self.last_sht_time = 0
         self.min_interval = 1.7
@@ -165,3 +167,19 @@ class Yi2K_cam_ctrl(object):
             #logfile.write("Yi send settings: Can't send settings, communication error" + "\n")
             #beep(0.4, 0.1, 2)
             return timestamp, False
+
+    def ping_cam(self, cam_ip, timeout=10):
+        start_timestamp = time.time()
+        result = None
+        while result != 0:
+            result = system("ping -c 1 " + cam_ip + " > /dev/null")
+            if time.time() - start_timestamp > timeout:
+                break
+   
+        return True if result == 0 else False
+
+    def ping_all_cams(self, timeout=10):
+        result = []
+        for cam_ip in self.cams_ip:
+            result.append(self.ping_cam(cam_ip, timeout))
+        return result

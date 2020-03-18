@@ -7,7 +7,7 @@ import datetime
 import RPi.GPIO as GPIO
 import Yi2k_ctrl
 import subprocess
-import gpsd
+import gpsd #module gpsd-py3
 import threading
 import runpy
 import argparse
@@ -20,9 +20,13 @@ from queue import Queue
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
-from flask import Flask, render_template, url_for, flash
 
+from flask import Flask, render_template, url_for, redirect, flash
+from flask_config import Config
+from flask_forms import SessionForm 
 app = Flask(__name__)
+app.config.from_object(Config)
+
 
 cam_range=0b00001111
 global cams_up
@@ -336,7 +340,7 @@ def cams_power_down(cameras_obj, cams=None):
 def start_gnss_log(gnss_session_name):
     try:
         now = datetime.datetime.now()
-        gnss_filename = os.path.expanduser("~") + "/Documents/Sessions_V4MPOD/gnss_log_" + str(gnss_session_name) + "_" + now.strftime("%Y-%m-%d_%H.%M.%S") + ".nmea"
+        gnss_filename = os.path.expanduser("~") + "/Documents/Sessions_V4MPOD/gnss_log_" + str(gnss_session_name) + "_" + now.strftime("%Y-%m-%d_%H.%M.%S") + ".ubx"
         subprocess.call(["gpspipe -d -R -o" + str(gnss_filename)], shell=True)
     except Exception as e:
         print("error during starting gnss log")
@@ -384,18 +388,22 @@ def cams_set_clocks(cameras_obj):
     if answer:
         logfile.write(str(timestamp) + "," + "Yi set clock: OK" + "\n")
         beep(0.1)
+        return True
     else:
         logfile.write(str(timestamp) + "," + "Yi set clock: Can't set clock, communication error" + "\n")
         beep(0.4, 0.1, 2)
+        return False
 
 def cams_send_settings(cameras_obj):
     answer = cameras_obj.send_settings()
     if answer[1]:
         logfile.write(str(answer[0]) + "," + "Yi send settings: OK" + "\n")
         beep(0.1)
+        return True
     else:
         logfile.write(str(answer[0]) + "," + "Yi send settings: Can't send settings, communication error" + "\n")
         beep(0.4, 0.1, 2)
+        return False
         
 
 def arg_parser():
@@ -449,7 +457,7 @@ def open_file(log_session_name):
     return logfile
 
 
-def new_session(session_name=None):
+def new_session(session_name=None, restart_gnss_log=False):
     #TODO vérifier l'état du compteur de photo après création d'une nouvelle session
     global logfile
     #remove whitespace in session_name
@@ -469,7 +477,12 @@ def new_session(session_name=None):
     #start new logfile
     logfile = open_file(session_name)
     #start new gnss log
-    start_gnss_log(session_name)
+    if restart_gnss_log:
+        start_gnss_log(session_name)
+
+    return True
+    #TODO gérer erreurs
+    
 
 def flush_log(logqueue):
     #since Python 3.4 file are inheritable. I think it's why
@@ -523,18 +536,32 @@ def menu_next_line():
 
 @app.route('/')
 @app.route('/index')
-def web_index():
-    pass
+def index():
+    return render_template("index.html")
+    #return "OK"
 
 @app.route('/pwr_up')
 def web_pwr_up():
     answer = cams_power_up(MyCams, cam_range)
-    return str(answer)
+    return redirect(url_for("index"))
 
 @app.route('/pwr_down')
 def web_pwr_down():
     answer = cams_power_down(MyCams, cam_range)
-    return str(answer)
+    return redirect(url_for("index"))
+
+@app.route('/session', methods=['GET', 'POST'])
+def web_session():
+    form = SessionForm()
+    if form.validate_on_submit():
+        if new_session(form.session_name.data, form.new_gnss.data):
+            flash('New session: {}, New gnss file: {}'.format(
+            form.session_name.data, form.new_gnss.data))
+        else:
+            flash('FAILED: New session: {}, New gnss file: {}'.format(
+            form.session_name.data, form.new_gnss.data))
+        return redirect(url_for('index'))
+    return render_template("session.html", title="Session", form=form)
 
 @app.route('/status')
 def web_status():
@@ -543,6 +570,24 @@ def web_status():
     pic_count = str(MyCams.pic_count)
     error = str(MyCams.shutter_error)
     return cam_status + pic_count + error
+@app.route('/send_settings')
+def web_send_settings():
+    result1 = cams_send_settings(MyCams)
+    if result1:
+        flash('Settings sent')
+    else:
+        flash('FAILED: Settings sent')
+    return redirect(url_for('index'))
+
+@app.route('/set_clocks')
+def web_set_clocks():
+    result1 = cams_set_clocks(MyCams)
+    if result1:
+        flash('Clocks set')
+    else:
+        flash('FAILED: Clocks set')
+    return redirect(url_for('index'))
+
 
 menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, cam_range"},
 {"Name":"Power up Cams", "Func":"cams_power_up", "Param":"MyCams, cam_range"},
@@ -579,17 +624,19 @@ logqueue=Queue(maxsize=0)
 back=menu.create_blanck_img()
 img_menu_top = menu.create_full_img(menuA[0])
 current_img=menu.select_line(img_menu_top, back, 1, disp)
-new_session("première_session")
-MyCams = Yi2k_ctrl.Yi2K_cam_ctrl('/dev/ttyACM0', '115200', cam_range)
+new_session("première_session", restart_gnss_log=True)
+MyCams = Yi2k_ctrl.Yi2K_cam_ctrl('/dev/ttyACM0', '115200', cam_range, ["192.168.43.10", "192.168.43.11", "192.168.43.12", "192.168.43.13"])
 cams_arduino_connect(MyCams)
 #check if interactive mode is enabled
 arg_parser()
-threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
+#threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
+app.run(host="0.0.0.0", port=5000, debug=True)
 #todo mode deamon pour le thread ??
 
 
 # Loop until user presses CTRL-C
 while keepRunning:
+    time.sleep(0.01)
     if Keypressed:
         handleKeyPress()
     if keyDown:

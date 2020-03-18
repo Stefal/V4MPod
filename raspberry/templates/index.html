@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+        <h1>Hello!</h1>
+        <div><p>
+                <a href="{{ url_for('web_pwr_up') }}">Power up all cams</a><br />
+                <a href="{{ url_for('web_pwr_down') }}">Power down all cams</a>
+                
+        </p></div>
+        <div><p>
+                <a href="{{ url_for('web_send_settings') }}">Send settings to all cams</a><br />
+                <a href="{{ url_for('web_set_clocks') }}">Set clocks for all cams</a>
+        </p></div>
+{% endblock %}
