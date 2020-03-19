@@ -5,7 +5,7 @@ import smbus
 import time
 import datetime
 import RPi.GPIO as GPIO
-import Yi2k_ctrl
+import Yi2K_ctrl
 import subprocess
 import gpsd #module gpsd-py3
 import threading
@@ -625,7 +625,7 @@ back=menu.create_blanck_img()
 img_menu_top = menu.create_full_img(menuA[0])
 current_img=menu.select_line(img_menu_top, back, 1, disp)
 new_session("première_session", restart_gnss_log=True)
-MyCams = Yi2k_ctrl.Yi2K_cam_ctrl('/dev/ttyACM0', '115200', cam_range, ["192.168.43.10", "192.168.43.11", "192.168.43.12", "192.168.43.13"])
+MyCams = Yi2K_ctrl.Yi2K_cams_ctrl('/dev/ttyACM0', '115200', cam_range, ["192.168.43.10", "192.168.43.11", "192.168.43.12", "192.168.43.13"])
 cams_arduino_connect(MyCams)
 #check if interactive mode is enabled
 arg_parser()

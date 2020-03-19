@@ -6,7 +6,10 @@
         {{ form.hidden_tag() }}
         <p>
             {{ form.session_name.label }}<br>
-            {{ form.session_name(size=32) }}
+            {{ form.session_name(size=32) }}<br />
+            {% for error in form.session_name.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
         </p>
 
         <p>{{ form.new_gnss.label }} {{ form.new_gnss() }}</p>
