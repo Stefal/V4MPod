@@ -78,19 +78,32 @@ class Yi2K_cam_info(object):
     def send_settings(self, *settings):
         if self._socket_connect():
             start_time = time.time()
-            for line in settings:
-                #TODO
-                pass
+            for setting in settings:
+                setting['token'] = self.token
+                self.srv.send(json.dumps(setting).encode())
+                self.srv.recv(512)
 
-            self.srv.send(tosend.encode())
-            self.srv.recv(512)
             self._socket_close()
-            print("Time sets to {}".format(myLocTime))
-            total_time = time.time() - start_time
-            print("temps écoulé : {}".format(total_time))
             return True
         else:
             return False
+
+    def send_file_settings(self, file_path):
+        settings = []
+        with open(file_path) as file:
+            for line in file:
+                if not line.startswith("#") and line.startswith('{"msg_id"'):
+                    try:
+                        settings.append(json.loads(line))
+                    except Exception as e:
+                        print("Json error: ", e)
+                        return False
+        
+        result = self.send_settings(*settings)
+        return True if result else False
+
+
+
 
             
 
@@ -262,44 +275,55 @@ class Yi2K_cams_ctrl(object):
 
         return timestamp, True
 
-    def send_settings(self, *cams_info):
+    def send_settings(self, settings, *cams_info):
         if len(cams_info) == 0:
             cams_info = self.cams_list
         timestamp=time.time()
         try:
-            runpy.run_path("/home/pi/V4MPod/raspberry/Yi2k_scripts/_4Yi_set_param.py")
-            #logfile.write("Yi send settings: OK" + "\n")
-            #beep(0.1)
-            return timestamp, True
-        except:
-            #logfile.write("Yi send settings: Can't send settings, communication error" + "\n")
-            #beep(0.4, 0.1, 2)
+            for cam_info in cams_info:
+                if not cam_info.send_settings(*settings):
+                    raise IOError("Can't send setting to {}".format(cam_info.ip))
+        except IOError as e:
             return timestamp, False
 
-    def ping_cam(self, cam_info, timeout=10):
-        start_timestamp = time.time()
-        result = None
-        while result != 0:
-            result = system("ping -c 1 " + cam_info.ip + " > /dev/null")
-            if time.time() - start_timestamp > timeout:
-                break
-        if result == 0:
-                       
-            #TODO Verifier s'il est bien pertinent de mettre à jour
-            #cam_range aussitôt. Il pourrait être préférable de demander
-            #une action de l'utilisateur pour désactiver une caméra qui ne
-            #serait pas joignable.
-            self.cams_range = self.cams_range | cam_info.bit
-            cam_info.online = True
-        else:
-            self.cams_range = self.cams_range & (0b11111111 ^ cam_info.bit)
-            cam_info.online = False
+        return timestamp, True
 
-        return True if result == 0 else False
+    def send_file_settings(self, file_path, *cams_info):
+        if len(cams_info) == 0:
+            cams_info = self.cams_list
+        timestamp=time.time()
+        try:
+            for cam_info in cams_info:
+                cam_info.send_file_settings(file_path)
+        except Exception as e:
+            print("Error send file settings: {}".format(e))
+            return timestamp, False
+        return timestamp, True
 
-    def ping_all_cams(self, timeout=10):
-        result = []
-        for cam in self.cams_list:
+    def ping_cams(self, *cams_info, timeout=10):
+        if len(cams_info) == 0:
+            cams_info = self.cams_list
+        
+        for cam_info in cams_info:
+            start_timestamp = time.time()
+            response = None
+            while response != 0:
+                response = system("ping -c 1 " + cam_info.ip + " > /dev/null")
+                if time.time() - start_timestamp > timeout:
+                    break
+            if response == 0:
+                        
+                #TODO Verifier s'il est bien pertinent de mettre à jour
+                #cam_range aussitôt. Il pourrait être préférable de demander
+                #une action de l'utilisateur pour désactiver une caméra qui ne
+                #serait pas joignable.
+                self.cams_range = self.cams_range | cam_info.bit
+                cam_info.online = True
+            else:
+                self.cams_range = self.cams_range & (0b11111111 ^ cam_info.bit)
+                cam_info.online = False
 
-            result.append(self.ping_cam(cam, timeout))
+        result = True
+        for cam_info in cams_info:
+            result = result & cam_info.online
         return result

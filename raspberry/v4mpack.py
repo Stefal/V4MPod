@@ -394,8 +394,8 @@ def cams_set_clocks(cameras_obj):
         beep(0.4, 0.1, 2)
         return False
 
-def cams_send_settings(cameras_obj):
-    answer = cameras_obj.send_settings()
+def cams_send_settings(cameras_obj, file_path):
+    answer = cameras_obj.send_file_settings(file_path)
     if answer[1]:
         logfile.write(str(answer[0]) + "," + "Yi send settings: OK" + "\n")
         beep(0.1)
@@ -597,7 +597,7 @@ menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, 
  {"Name":"Start cam log", "Func":"logfile=open_file", "Param":""},
  {"Name":"Stop Gnss log", "Func":"stop_gnss_log", "Param":""},
  {"Name":"GNSS Info", "Func":"gnss_localization", "Param":""},
- {"Name":"Set Yi settings", "Func":"cams_send_settings", "Param":"MyCams"},
+ {"Name":"Set Yi settings", "Func":"cams_send_settings", "Param":"MyCams, '/home/pi/V4MPod/raspberry/Yi2k_scripts/options_v4mpack_json.txt'"},
  {"Name":"Set Yi clock", "Func":"cams_set_clocks", "Param":"MyCams"},
  {"Name":"Start new session", "Func":"new_session", "Param":""},
  {"Name":"Exit", "Func":"exit_prog", "Param":""},
