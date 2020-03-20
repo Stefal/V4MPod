@@ -23,10 +23,11 @@ from PIL import ImageFont
 
 from flask import Flask, render_template, url_for, redirect, flash
 from flask_config import Config
-from flask_forms import SessionForm 
+from flask_forms import SessionForm
+from flask_bootstrap import Bootstrap
 app = Flask(__name__)
 app.config.from_object(Config)
-
+Bootstrap = Bootstrap(app)
 
 cam_range=0b00001111
 global cams_up
@@ -540,6 +541,10 @@ def index():
     return render_template("index.html")
     #return "OK"
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    pass
+
 @app.route('/pwr_up')
 def web_pwr_up():
     answer = cams_power_up(MyCams)
@@ -633,8 +638,8 @@ MyCams = Yi2K_ctrl.Yi2K_cams_ctrl('/dev/ttyACM0', 115200, Cam1, Cam2, Cam3, Cam4
 cams_arduino_connect(MyCams)
 #check if interactive mode is enabled
 arg_parser()
-threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
-#app.run(host="0.0.0.0", port=5000, debug=True)
+#threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
+app.run(host="0.0.0.0", port=5000, debug=True)
 #todo mode deamon pour le thread ??
 
 
