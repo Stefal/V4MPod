@@ -135,7 +135,7 @@ GPIO.setup(hall_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def hall_callback(hall_pin):
   print('Edge detected on pin %s' %hall_pin)
-  cams_takePic(MyCams,logqueue, cam_range)
+  cams_takePic(MyCams,logqueue, pic_id=1)
   lcd_write_text("Picture", 1)
 
 GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
@@ -195,16 +195,16 @@ def handleKeyPress():
     print(bin(KeyValue))
     if KeyValue & 0b1:
         print("Power up button")
-        cams_power_up(cam_range)
+        cams_power_up(MyCams)
         lcd_write_text("Powering up...", 10)
         lcd_write_text("Cams ready", 5)
     elif KeyValue & 0b10:
         print("Power down button")
-        cams_power_down(cam_range)
+        cams_power_down(MyCams)
         lcd_write_text("Pwr cam down..", 5)     
     elif KeyValue & 0b100:
         print("Shutter button")
-        cams_takePic(MyCams,logqueue, pic_count, cam_range)
+        cams_takePic(MyCams,logqueue, pic_count)
         #lcd_write_text("Picture", 1)
     elif KeyValue & 0b1000:
         print("Select button")
@@ -292,8 +292,8 @@ def beep(duration=0.2, pause=0.2, repeat=0):
         GPIO.output(buzzer_pin,0)
         time.sleep(pause)
 
-def cams_takePic(cameras_obj, log_queue, cams=None, pic_id=1):
-    pic_answer = cameras_obj.takePic(cams)
+def cams_takePic(cameras_obj, log_queue, pic_id=1, *cams):
+    pic_answer = cameras_obj.takePic(*cams)
     #pic_answer is a tuple: timestamp, pic_return, cam, status
     log_queue.put(str(pic_answer[0]) + "," + str(pic_answer[1]) + "," + str(pic_answer[2]) + "," + pic_answer[3] + "\n")
     if pic_answer[3] == "ok":
@@ -304,18 +304,18 @@ def cams_takePic(cameras_obj, log_queue, cams=None, pic_id=1):
     return pic_answer[1]
 
 
-def picLoop(cam, pic_nbr, pause, logqueue):
+def picLoop(cameras_obj, pic_nbr, pause, logqueue):
     t = threading.currentThread()
     for i in range(pic_nbr-1):
         if  getattr(t, "do_run", True):
-            cams_takePic(MyCams, logqueue, cam_range, i)
+            cams_takePic(cameras_obj, logqueue, pic_id=i)
             time.sleep(pause)
         else:
             break
         
 def start_Timelapse():
     global timelapsethread
-    timelapsethread=threading.Thread(target=picLoop, args=(cam_range, 100000, 1.3, logqueue,), name="Picloop")
+    timelapsethread=threading.Thread(target=picLoop, args=(MyCams, 100000, 1.3, logqueue,), name="Picloop")
     timelapsethread.start()
     
 def stop_Timelapse():
@@ -327,13 +327,13 @@ def cams_arduino_connect(camera_obj):
     logfile.write(str(timestamp) + "," + "Arduino connection: " + "," + str(answer) + "\n")
     return answer
 
-def cams_power_up(cameras_obj, cams=None):
-    timestamp, answer, cams = cameras_obj.power_up(cams)
+def cams_power_up(cameras_obj, *cams):
+    timestamp, answer, cams = cameras_obj.power_up(*cams)
     logfile.write(str(timestamp) + "," + str(answer) + "," + str(cams) + "\n")
     return answer
 
-def cams_power_down(cameras_obj, cams=None):
-    timestamp, answer, cams = cameras_obj.power_down(cams)
+def cams_power_down(cameras_obj, *cams):
+    timestamp, answer, cams = cameras_obj.power_down(*cams)
     logfile.write(str(timestamp) + "," + "Power down" + "," + str(cams) + "\n")
     return answer
 
@@ -383,8 +383,8 @@ def gnss_localization():
     print(packet.position())
     print(packet.time)
 
-def cams_set_clocks(cameras_obj):
-    timestamp, answer = cameras_obj.set_clocks()
+def cams_set_clocks(cameras_obj, *cams):
+    timestamp, answer = cameras_obj.set_clocks(*cams)
     if answer:
         logfile.write(str(timestamp) + "," + "Yi set clock: OK" + "\n")
         beep(0.1)
@@ -394,8 +394,8 @@ def cams_set_clocks(cameras_obj):
         beep(0.4, 0.1, 2)
         return False
 
-def cams_send_settings(cameras_obj, file_path):
-    answer = cameras_obj.send_file_settings(file_path)
+def cams_send_file_settings(cameras_obj, file_path, *cams):
+    answer = cameras_obj.send_file_settings(file_path, *cams)
     if answer[1]:
         logfile.write(str(answer[0]) + "," + "Yi send settings: OK" + "\n")
         beep(0.1)
@@ -542,12 +542,12 @@ def index():
 
 @app.route('/pwr_up')
 def web_pwr_up():
-    answer = cams_power_up(MyCams, cam_range)
+    answer = cams_power_up(MyCams)
     return redirect(url_for("index"))
 
 @app.route('/pwr_down')
 def web_pwr_down():
-    answer = cams_power_down(MyCams, cam_range)
+    answer = cams_power_down(MyCams)
     return redirect(url_for("index"))
 
 @app.route('/session', methods=['GET', 'POST'])
@@ -572,7 +572,7 @@ def web_status():
     return cam_status + pic_count + error
 @app.route('/send_settings')
 def web_send_settings():
-    result1 = cams_send_settings(MyCams)
+    result1 = cams_send_file_settings(MyCams, '/home/pi/V4MPod/raspberry/Yi2k_scripts/options_v4mpack_json.txt')
     if result1:
         flash('Settings sent')
     else:
@@ -589,15 +589,15 @@ def web_set_clocks():
     return redirect(url_for('index'))
 
 
-menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, cam_range"},
-{"Name":"Power up Cams", "Func":"cams_power_up", "Param":"MyCams, cam_range"},
- {"Name":"Power down Cams", "Func":"cams_power_down", "Param":"MyCams, cam_range"},
+menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, pic_id=1"},
+{"Name":"Power up Cams", "Func":"cams_power_up", "Param":"MyCams"},
+ {"Name":"Power down Cams", "Func":"cams_power_down", "Param":"MyCams"},
  {"Name":"Start TimeLapse", "Func":"start_Timelapse", "Param":""},
  {"Name":"Stop TimeLapse", "Func":"stop_Timelapse", "Param":""},
  {"Name":"Start cam log", "Func":"logfile=open_file", "Param":""},
  {"Name":"Stop Gnss log", "Func":"stop_gnss_log", "Param":""},
  {"Name":"GNSS Info", "Func":"gnss_localization", "Param":""},
- {"Name":"Set Yi settings", "Func":"cams_send_settings", "Param":"MyCams, '/home/pi/V4MPod/raspberry/Yi2k_scripts/options_v4mpack_json.txt'"},
+ {"Name":"Set Yi settings", "Func":"cams_send_file_settings", "Param":"MyCams, '/home/pi/V4MPod/raspberry/Yi2k_scripts/options_v4mpack_json.txt'"},
  {"Name":"Set Yi clock", "Func":"cams_set_clocks", "Param":"MyCams"},
  {"Name":"Start new session", "Func":"new_session", "Param":""},
  {"Name":"Exit", "Func":"exit_prog", "Param":""},
@@ -625,12 +625,16 @@ back=menu.create_blanck_img()
 img_menu_top = menu.create_full_img(menuA[0])
 current_img=menu.select_line(img_menu_top, back, 1, disp)
 new_session("première_session", restart_gnss_log=True)
-MyCams = Yi2K_ctrl.Yi2K_cams_ctrl('/dev/ttyACM0', '115200', cam_range, ["192.168.43.10", "192.168.43.11", "192.168.43.12", "192.168.43.13"])
+Cam1 = Yi2K_ctrl.Yi2K_cam_info("Cam avant", 0b1, "192.168.43.10")
+Cam2 = Yi2K_ctrl.Yi2K_cam_info("Cam droite", 0b10, "192.168.43.11")
+Cam3 = Yi2K_ctrl.Yi2K_cam_info("Cam droite", 0b100, "192.168.43.12")
+Cam4 = Yi2K_ctrl.Yi2K_cam_info("Cam droite", 0b1000, "192.168.43.13")
+MyCams = Yi2K_ctrl.Yi2K_cams_ctrl('/dev/ttyACM0', 115200, Cam1, Cam2, Cam3, Cam4)
 cams_arduino_connect(MyCams)
 #check if interactive mode is enabled
 arg_parser()
-#threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
-app.run(host="0.0.0.0", port=5000, debug=True)
+threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
+#app.run(host="0.0.0.0", port=5000, debug=True)
 #todo mode deamon pour le thread ??
 
 
