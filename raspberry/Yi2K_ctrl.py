@@ -18,9 +18,10 @@ class Yi2K_cam_info(object):
         self.total_pic = None
         self.session_pic = None
         self.sd_space = None
-        self.online = False
+        self.online = None
         self.connected = False
         self.setting_preset = None
+        self.status = {"battery" : None}
         self.port = 7878
         self.srv = None
         self.token = None
@@ -75,6 +76,49 @@ class Yi2K_cam_info(object):
         else:
             return False
 
+    def get_battery(self):
+        if self._socket_connect():
+            data = {"msg_id":13}
+            data['token'] = self.token
+            jsondata = json.dumps(data)
+            self.srv.send(jsondata.encode())
+            response = json.loads(self.srv.recv(512).decode())
+            self._socket_close()
+            result = response['type']
+            #The Yi doesn't give the battery level when charging.
+            if result == 'adapter':
+                self.status['battery'] = 'charging'
+            else:
+                self.status['battery'] = result
+            
+            return result
+        else:
+            return False
+            
+    def get_storage_info(self):
+        if self._socket_connect():
+            # get total space
+            data = {"msg_id": 5, "type": "total"}
+            data['token'] = self.token
+            jsondata = json.dumps(data)
+            self.srv.send(jsondata.encode())
+            total_response = json.loads(self.srv.recv(512).decode())
+            # get free space
+            data = {"msg_id": 5, "type": "free"}
+            data['token'] = self.token
+            jsondata = json.dumps(data)
+            self.srv.send(jsondata.encode())
+            free_response = json.loads(self.srv.recv(512).decode())
+            self._socket_close()
+
+            self.status['total_space'] = total_response['param']
+            self.status['free_space'] = free_response['param']
+            self.status['percent_space'] = int(self.status['free_space']*100/self.status['total_space'])
+            
+            return total_response, free_response
+        else:
+            return False
+            
     def send_settings(self, *settings):
         if self._socket_connect():
             start_time = time.time()
@@ -254,13 +298,16 @@ class Yi2K_cams_ctrl(object):
         self.power_down(*cams_info)
         self.power_up(*cams_info)
 
-    def is_on(self, cams=None):
-        if cams == None:
-            cams = self.cams_range
-        if cams & self.cams_on == cams:
-            return True
-        else:
-            return False
+    def is_online(self, *cams_info):
+        if len(cams_info) == 0:
+            cams_info = self.cams_list
+            result = True
+            for cam_info in cams_info:
+                result = result & cam_info.online
+            return result
+        if len(cams_info) == 1:
+            # in case of single cam request, I want to know if the status is none
+            return cams_info[0].online
     
     def set_clocks(self, *cams_info):
         if len(cams_info) == 0:

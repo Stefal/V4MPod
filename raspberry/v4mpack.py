@@ -338,6 +338,13 @@ def cams_power_down(cameras_obj, *cams):
     logfile.write(str(timestamp) + "," + "Power down" + "," + str(cams) + "\n")
     return answer
 
+def cams_ping(camera_obj, *cams, timeout=10):
+    timestamp = time.time()
+    answer = camera_obj.ping_cams(*cams, timeout=timeout)
+    logfile.write(str(timestamp) + "," + str(answer) + "\n")
+    return answer
+
+
 def start_gnss_log(gnss_session_name):
     try:
         now = datetime.datetime.now()
@@ -538,8 +545,17 @@ def menu_next_line():
 @app.route('/')
 @app.route('/index')
 def index():
-    return render_template("index.html")
+    cams_status = []
+    for cam in MyCams.cams_list:
+        cams_status.append({'name' : cam.name, 'status' : MyCams.is_online(cam)})
+
+    return render_template("index.html", cams_status=cams_status)
     #return "OK"
+
+@app.route('/ping')
+def web_ping():
+    cams_ping(MyCams, timeout=1)
+    return redirect(url_for("index"))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -632,14 +648,14 @@ current_img=menu.select_line(img_menu_top, back, 1, disp)
 new_session("première_session", restart_gnss_log=True)
 Cam1 = Yi2K_ctrl.Yi2K_cam_info("Cam avant", 0b1, "192.168.43.10")
 Cam2 = Yi2K_ctrl.Yi2K_cam_info("Cam droite", 0b10, "192.168.43.11")
-Cam3 = Yi2K_ctrl.Yi2K_cam_info("Cam droite", 0b100, "192.168.43.12")
-Cam4 = Yi2K_ctrl.Yi2K_cam_info("Cam droite", 0b1000, "192.168.43.13")
+Cam3 = Yi2K_ctrl.Yi2K_cam_info("Cam arriere", 0b100, "192.168.43.12")
+Cam4 = Yi2K_ctrl.Yi2K_cam_info("Cam gauche", 0b1000, "192.168.43.13")
 MyCams = Yi2K_ctrl.Yi2K_cams_ctrl('/dev/ttyACM0', 115200, Cam1, Cam2, Cam3, Cam4)
 cams_arduino_connect(MyCams)
 #check if interactive mode is enabled
 arg_parser()
-#threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
-app.run(host="0.0.0.0", port=5000, debug=True)
+threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
+#app.run(host="0.0.0.0", port=5000, debug=True)
 #todo mode deamon pour le thread ??
 
 
