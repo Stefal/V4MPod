@@ -323,6 +323,11 @@ def stop_Timelapse():
     global timelapsethread
     timelapsethread.do_run = False
 
+def cams_take_first_pic(camera_obj, *cams):
+    timestamp, answer = camera_obj.take_first_pic(*cams)
+    logfile.write(str(timestamp) + "," + "firs pic: " + "," + str(answer) + "\n")
+    return answer
+
 def cams_arduino_connect(camera_obj):
     timestamp, answer = camera_obj.connect()
     logfile.write(str(timestamp) + "," + "Arduino connection: " + "," + str(answer) + "\n")

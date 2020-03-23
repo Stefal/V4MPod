@@ -21,15 +21,26 @@ class Yi2K_cam_info(object):
         self.online = None
         self.connected = False
         self.setting_preset = None
-        self.status = {"battery" : None}
+        self.status = {"battery_level" : None, "ext_powered": None, "total_space" : None, "free_space" : None, "percent_space" : None}
         self.port = 7878
         self.srv = None
         self.token = None
+        self.MSG_CONFIG_GET = 1
+        self.MSG_CONFIG_SET = 2
+        self.MSG_CONFIG_GET_ALL = 3
+        self.MSG_STORAGE_USAGE = 5
+        self.MSG_AUTHENTICATE = 257
+        self.MSG_BATTERY = 13
+        self.MSG_PREVIEW_START = 259
+        self.MSG_PREVIEW_STOP = 260
+        self.MSG_CAPTURE = 769
 
     def _socket_connect(self, timeout=5):
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         srv.connect((self.ip, self.port))
-        srv.send('{"msg_id":257,"token":0}'.encode())
+        srv.settimeout(10)
+        jsondata = json.dumps({"msg_id" : self.MSG_AUTHENTICATE, "token" :  0})
+        srv.send(jsondata.encode())
         start_timestamp = time.time()
         token = None
         while token == None:
@@ -76,35 +87,105 @@ class Yi2K_cam_info(object):
         else:
             return False
 
-    def get_battery(self):
+    def get_setting(self, setting_type):
+        #TODO : use dict.get(key) instead of dict[key]
         if self._socket_connect():
-            data = {"msg_id":13}
+            data = {"msg_id":self.MSG_CONFIG_GET, "type" : setting_type}
             data['token'] = self.token
             jsondata = json.dumps(data)
             self.srv.send(jsondata.encode())
             response = json.loads(self.srv.recv(512).decode())
             self._socket_close()
-            result = response['type']
-            #The Yi doesn't give the battery level when charging.
-            if result == 'adapter':
-                self.status['battery'] = 'charging'
-            else:
-                self.status['battery'] = result
+
+            if response['rval'] != 0:
+                return False
+
+            return response
+        return False
+
+    def set_setting(self, setting_type, setting_value):
+    #TODO : use dict.get(key) instead of dict[key]
+
+    # photo size :
+    # set_setting("photo_size", "16M (4608x3456 4:3) / 8M (3264x2448 4:3)"")
+    # meter mode
+    # set_setting("meter_mode", "center/average/spot")
+    #
+    # get setting choice : msg_id : 9, param: setting type
+    
+        if self._socket_connect():
+            data = {"msg_id":self.MSG_CONFIG_SET, "type" : setting_type, "param" : setting_value}
+            data['token'] = self.token
+            jsondata = json.dumps(data)
+            self.srv.send(jsondata.encode())
+            response = json.loads(self.srv.recv(512).decode())
+            self._socket_close()
+
+            if response['rval'] != 0:
+                return False
+
+            return True
+        return False
+
+    def wait_for_pic(self, timeout=10):
+        # problème lorsqu'on récupère les données et qu'il y a plusieurs messages :
+        # json.loads ne fonctionne plus, il faut d'abord séparer les différents
+        # messages, ou trouver une autre solution.
+        if self.connected:
+            #response = json.loads(self.srv.recv(1024).decode())
+            start_timestamp = time.time()
+            try:
+                while True:
+                    response = self.srv.recv(1024).decode()
+                    for msg in response.split('{ "'):
+                        try:
+                            jsondata = json.loads('{ "' + msg)
+                            if jsondata.get("type") == "photo_taken":
+                                return jsondata.get("param")
+                        except ValueError:
+                            pass
+                    if time.time() - start_timestamp > timeout:
+                        raise Exception("timed out")
+
+            except Exception as e:
+                print("timed out")
+                return False
             
-            return result
+        else:
+            return False
+
+
+    def get_battery(self):
+        if self._socket_connect():
+            data = {"msg_id":self.MSG_BATTERY}
+            data['token'] = self.token
+            jsondata = json.dumps(data)
+            self.srv.send(jsondata.encode())
+            response = json.loads(self.srv.recv(512).decode())
+            self._socket_close()
+            
+            if response['type'] == 'adapter':
+                self.status['ext_powered'] = True
+                self.status['battery_level'] = response['param']
+            else:
+                self.status['ext_powered'] = False
+                self.status['battery_level'] = response['param']
+            
+            return response
+
         else:
             return False
             
     def get_storage_info(self):
         if self._socket_connect():
             # get total space
-            data = {"msg_id": 5, "type": "total"}
+            data = {"msg_id": self.MSG_STORAGE_USAGE, "type": "total"}
             data['token'] = self.token
             jsondata = json.dumps(data)
             self.srv.send(jsondata.encode())
             total_response = json.loads(self.srv.recv(512).decode())
             # get free space
-            data = {"msg_id": 5, "type": "free"}
+            data = {"msg_id": self.MSG_STORAGE_USAGE, "type": "free"}
             data['token'] = self.token
             jsondata = json.dumps(data)
             self.srv.send(jsondata.encode())
@@ -219,7 +300,7 @@ class Yi2K_cams_ctrl(object):
         #We need to wake up them, and one solution is to force sync their clocks
         #BON en fait, non, ça ne fonctionne pas, mais je laisse la resynchro quand même pour le moment.
         if timestamp - self.last_sht_time > self.standby_time:
-            self.set_clocks()
+            self.set_clocks(*cams_info)
             print("set clocks")
             timestamp=time.time()
 
@@ -250,7 +331,28 @@ class Yi2K_cams_ctrl(object):
         
         self.pic_count += 1
         return timestamp, pic_return, bin(cams_bits), status
+
+    def take_first_pic(self, *cams_info):
         
+        timestamp = time.time()
+        if len(cams_info) == 0:
+            cams_info = self.cams_list
+        
+        #connect all cam
+        for cam_info in cams_info:
+            if cam_info.connected != True:
+                cam_info._socket_connect()
+
+        #modifying last shutter time to exclude a set_clocks call
+        self.last_sht_time = time.time()
+
+        self.takePic(*cams_info)
+        result = []
+        for cam_info in cams_info:
+            result.append({cam_info.name : cam_info.wait_for_pic()})
+        
+        return timestamp, result
+
     def power_up(self, *cams_info):
         
         if len(cams_info) == 0:
