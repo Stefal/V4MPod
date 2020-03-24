@@ -8,6 +8,8 @@ import re
 import socket
 import json
 
+#live preview : rtsp://address:554/live
+
 class Yi2K_cam_info(object):
 
     def __init__(self, name, bit, ip):
