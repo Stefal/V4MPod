@@ -614,6 +614,16 @@ def web_set_clocks():
         flash('FAILED: Clocks set')
     return redirect(url_for('index'))
 
+@app.route('/cam')
+def cam():
+    Cam1.get_battery()
+    Cam1.get_storage_info()
+    data = Cam1.status
+    data['is_on'] = Cam1.is_on
+    data['name'] = Cam1.name
+    data['online'] = Cam1.online
+    data['free_space'] = round(data['free_space']/1024/1024, 2)
+    return render_template("cam.html", title="cam", cam_status=data)
 
 menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, pic_id=1"},
 {"Name":"Power up Cams", "Func":"cams_power_up", "Param":"MyCams"},
@@ -659,8 +669,8 @@ MyCams = Yi2K_ctrl.Yi2K_cams_ctrl('/dev/ttyACM0', 115200, Cam1, Cam2, Cam3, Cam4
 cams_arduino_connect(MyCams)
 #check if interactive mode is enabled
 arg_parser()
-threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
-#app.run(host="0.0.0.0", port=5000, debug=True)
+#threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
+app.run(host="0.0.0.0", port=5000, debug=True)
 #todo mode deamon pour le thread ??
 
 

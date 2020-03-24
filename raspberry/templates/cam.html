@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<link href="{{url_for('static', filename='bootstrap-toggle.css')}}" rel="stylesheet">
+
+<div>
+<h2>{{ cam_status.name }}___</h2>
+<div>
+  Power 
+    <label>
+      {% if cam_status.is_on == True %}
+      <span class="glyphicon glyphicon-off" style="color:green ; font-size:1.5em"></span>
+      {% elif cam_status.is_on == False %}
+      <span class="glyphicon glyphicon-off" style="color:gray ; font-size:1.5em"></span>
+      {% elif cam_status.is_on == None %}
+      <span class="glyphicon glyphicon-off" style="color:whitesmoke ; font-size:1.5em"></span>
+      {% endif %}
+    </label>
+  Wifi
+    {% if cam_status.online == none %}
+    <button type="button" class="btn btn-light">?</button>
+    {% elif cam_status.online == true %}
+    <button type="button" class="btn btn-success">&nbsp;</button>
+    {% elif cam_status.online == false %}
+    <button type="button" class="btn btn-danger">&nbsp;</button>
+    {% endif %}
+    <br />
+    Battery : {{ cam_status.battery_level}}% - ext pwr :
+    {% if cam_status.ext_powered == True %} 
+    <span class="glyphicon glyphicon-flash" style="color:green ; font-size:1.5em"></span><br />
+    {% elif cam_status.ext_powered == False %}
+    <span class="glyphicon glyphicon-flash" style="color:gray ; font-size:1.5em"></span><br />
+    {% elif cam_status.ext_powered == None %}
+    <span class="glyphicon glyphicon-flash" style="color:whitesmoke ; font-size:1.5em"></span><br />
+    {% endif %}
+    SD - free space : {{ cam_status.free_space }}GB ({{ cam_status.percent_space }}%)<br />
+</div>
+
+{% endblock %}

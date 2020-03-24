@@ -16,6 +16,7 @@ class Yi2K_cam_info(object):
         self.name = name
         self.bit = bit
         self.ip = ip
+        self.is_on = None
         self.battery_level = None
         self.total_pic = None
         self.session_pic = None
@@ -352,7 +353,8 @@ class Yi2K_cams_ctrl(object):
         result = []
         for cam_info in cams_info:
             result.append({cam_info.name : cam_info.wait_for_pic()})
-        
+            cam_info._socket_close()
+       
         return timestamp, result
 
     def power_up(self, *cams_info):
@@ -376,6 +378,9 @@ class Yi2K_cams_ctrl(object):
         else:
             pass
         """
+        for cam_info in cams_info:
+            cam_info.is_on = True
+
         print(start_return)
         return timestamp, start_return, bin(cams_bits)
 
@@ -394,6 +399,8 @@ class Yi2K_cams_ctrl(object):
         """
         self.cam_on = self.cam_on ^ cam
         """
+        for cam_info in cams_info:
+            cam_info.is_on = False
         #logfile.write(str(down_return) + "\n")
         return timestamp, down_return, bin(cams_bits)
 
@@ -470,6 +477,7 @@ class Yi2K_cams_ctrl(object):
                 #serait pas joignable.
                 self.cams_range = self.cams_range | cam_info.bit
                 cam_info.online = True
+                cam_info.is_on = True
             else:
                 self.cams_range = self.cams_range & (0b11111111 ^ cam_info.bit)
                 cam_info.online = False
@@ -477,4 +485,7 @@ class Yi2K_cams_ctrl(object):
         result = True
         for cam_info in cams_info:
             result = result & cam_info.online
+        
+        #returning a single value for all cams
+        #TODO returning separate values for each cam?
         return result
