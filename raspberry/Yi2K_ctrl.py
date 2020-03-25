@@ -107,15 +107,15 @@ class Yi2K_cam_info(object):
         return False
 
     def set_setting(self, setting_type, setting_value):
-    #TODO : use dict.get(key) instead of dict[key]
+        #TODO : use dict.get(key) instead of dict[key]
 
-    # photo size :
-    # set_setting("photo_size", "16M (4608x3456 4:3) / 8M (3264x2448 4:3)"")
-    # meter mode
-    # set_setting("meter_mode", "center/average/spot")
-    #
-    # get setting choice : msg_id : 9, param: setting type
-    
+        # photo size :
+        # set_setting("photo_size", "16M (4608x3456 4:3) / 8M (3264x2448 4:3)"")
+        # meter mode
+        # set_setting("meter_mode", "center/average/spot")
+        #
+        # get setting choice : msg_id : 9, param: setting type
+        
         if self._socket_connect():
             data = {"msg_id":self.MSG_CONFIG_SET, "type" : setting_type, "param" : setting_value}
             data['token'] = self.token
@@ -129,6 +129,12 @@ class Yi2K_cam_info(object):
 
             return True
         return False
+
+    def get_image_capture_infos(self):
+
+        self.status['image_size'] = self.get_setting('photo_size').get("param")
+        self.status['meter_mode'] = self.get_setting('meter_mode').get("param")
+        self.status['system_mode'] = self.get_setting('system_mode').get("param")
 
     def wait_for_pic(self, timeout=10):
         # problème lorsqu'on récupère les données et qu'il y a plusieurs messages :
@@ -169,10 +175,10 @@ class Yi2K_cam_info(object):
             
             if response['type'] == 'adapter':
                 self.status['ext_powered'] = True
-                self.status['battery_level'] = response['param']
+                self.status['battery_level'] = int(response['param'])
             else:
                 self.status['ext_powered'] = False
-                self.status['battery_level'] = response['param']
+                self.status['battery_level'] = int(response['param'])
             
             return response
 

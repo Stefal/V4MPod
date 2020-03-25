@@ -618,11 +618,15 @@ def web_set_clocks():
 def cam():
     Cam1.get_battery()
     Cam1.get_storage_info()
+    Cam1.get_image_capture_infos()
     data = Cam1.status
     data['is_on'] = Cam1.is_on
     data['name'] = Cam1.name
     data['online'] = Cam1.online
+    data['image_size'] = data['image_size'].split()[0]
     data['free_space'] = round(data['free_space']/1024/1024, 2)
+    data['total_space'] = round(data['total_space']/1024/1024, 2)
+    data['clock'] = Cam1.get_setting('camera_clock').get('param')
     return render_template("cam.html", title="cam", cam_status=data)
 
 menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, pic_id=1"},
