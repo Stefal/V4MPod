@@ -550,13 +550,30 @@ def menu_next_line():
 @app.route('/')
 @app.route('/index')
 def index():
+    MyCams.check_cams_status()
+    
     cams_status = []
     for cam in MyCams.cams_list:
         cams_status.append(web_cam_info(cam))
-    print("index: ", cams_status)
+    
+    #strip imagge_size string
+    if not MyCams.cams_image_size == None:
+        all_cams_image_size = MyCams.cams_image_size.split()[0]
+    else:
+        all_cams_image_size = MyCams.cams_image_size
+
+    all_cams_status = {'image_size': all_cams_image_size, 
+                    'meter_mode': MyCams.cams_meter_mode,
+                    'system_mode': MyCams.cams_system_mode,
+                    'online': MyCams.cams_online,
+                    'is_on': MyCams.cams_is_on}
+
+    print("separate cams: ", cams_status)
+    print("alls cams: ", all_cams_status)
+
     # TODO vérifier comment se comporte le serveur web lorsqu'il doit affichier des
     # clé d'un dictionnaire qui n'existent pas.
-    return render_template("index.html", cams_status=cams_status)
+    return render_template("index.html", all_cams_status=all_cams_status, cams_status=cams_status)
     #return "OK"
 
 @app.route('/ping')
@@ -639,7 +656,7 @@ def cam(cam_name):
     data = web_cam_info(cam_obj)
     return render_template("cam.html", title="cam", cam_status=data)
 
-def web_cam_info(cam_obj):
+def web_cam_info2(cam_obj):
     
     data = {}
     data['obj'] = cam_obj
@@ -667,6 +684,24 @@ def web_cam_info(cam_obj):
         data['total_space'] = round(data['total_space']/1048576, 2)
         data['clock'] = cam_obj.get_setting('camera_clock').get('param')
 
+    return data
+
+def web_cam_info(cam_obj):
+    
+    data = {}
+    data['obj'] = cam_obj
+    data['idx'] = cam_obj.idx
+    data['is_on'] = cam_obj.is_on
+    data['name'] = cam_obj.name
+    data['online'] = cam_obj.online
+
+    if cam_obj.online == True:
+        data.update(cam_obj.status)
+        data['image_size'] = data['image_size'].split()[0]
+        data['free_space'] = round(data['free_space']/1048576, 2)
+        data['total_space'] = round(data['total_space']/1048576, 2)
+        data['clock'] = cam_obj.get_setting('camera_clock').get('param')
+    print("{} data: {}".format(data['name'], data))
     return data
 
 menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, pic_id=1"},

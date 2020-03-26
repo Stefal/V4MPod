@@ -24,7 +24,7 @@ class Yi2K_cam_info(object):
         self.online = None
         self.connected = False
         self.setting_preset = None
-        self.status = {"battery_level" : None, "ext_powered": None, "total_space" : None, "free_space" : None, "percent_space" : None}
+        self.status = {"battery_level" : None, "ext_powered": None, "total_space" : None, "free_space" : None, "percent_space" : None, 'image_size': None, 'meter_mode': None, 'system_mode': None}
         self.port = 7878
         self.srv = None
         self.token = None
@@ -297,7 +297,6 @@ class Yi2K_cams_ctrl(object):
         except Exception as e:
             return timestamp, e
             
-        
     def takePic(self, *cams_info):
 
         if len(cams_info) == 0:
@@ -370,6 +369,8 @@ class Yi2K_cams_ctrl(object):
         
         if len(cams_info) == 0:
             cams_bits = self.cams_range
+            cams_info = self.cams_list
+
         else:
             cams_bits = 0
             for cam_info in cams_info:
@@ -397,6 +398,7 @@ class Yi2K_cams_ctrl(object):
         
         if len(cams_info) == 0:
             cams_bits = self.cams_range
+            cams_info = self.cams_list
         else:
             cams_bits = 0
             for cam_info in cams_info:
@@ -502,3 +504,58 @@ class Yi2K_cams_ctrl(object):
         #returning a single value for all cams
         #TODO returning separate values for each cam?
         return result
+
+    def check_cams_status(self, *cams_info):
+        
+        if len(cams_info) == 0:
+            cams_info = self.cams_list
+        
+        for cam_info in cams_info:
+            if cam_info.is_on == None or (cam_info.is_on == True and cam_info.online != True):
+                #we don't know if cam is on
+                #let's ping it
+                #if cam is on, we need to ping it too
+                self.ping_cams(cam_info, timeout=2)
+
+            if cam_info.online == True:
+                cam_info.get_battery()
+                cam_info.get_storage_info()
+                cam_info.get_image_capture_infos()
+        
+        #merge status of all cams into a single value
+        is_on_list = [cam.is_on for cam in self.cams_list]
+        if is_on_list.count(is_on_list[0]) == len(is_on_list):
+            self.cams_is_on = is_on_list[0]
+        else:
+            self.cams_is_on = None
+
+        online_list = [cam.online for cam in self.cams_list]
+        if online_list.count(online_list[0]) == len(online_list):
+            self.cams_online = online_list[0]
+        else:
+            self.cams_online = None
+
+        image_size_list = [cam.status['image_size'] for cam in self.cams_list]
+        if image_size_list.count(image_size_list[0]) == len(image_size_list):
+            self.cams_image_size = image_size_list[0]
+        else:
+            self.cams_image_size = None
+
+        system_mode_list = [cam.status['system_mode'] for cam in self.cams_list]
+        if system_mode_list.count(system_mode_list[0]) == len(system_mode_list):
+            self.cams_system_mode = system_mode_list[0]
+        else:
+            self.cams_system_mode = None
+
+        meter_mode_list = [cam.status['meter_mode'] for cam in self.cams_list]
+        if meter_mode_list.count(meter_mode_list[0]) == len(meter_mode_list):
+            self.cams_meter_mode = meter_mode_list[0]
+        else:
+            self.cams_meter_mode = None
+
+
+
+
+
+
+
