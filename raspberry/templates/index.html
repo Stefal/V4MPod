@@ -54,7 +54,13 @@
                   {% endif %}
                 </th>
                 <th>Clock: </th>
-                <th>TODO PPS check</th>
+                <th>
+                  {% if general_status.clock_sync == True %}
+                  <span style="color:green">PPS</span>
+                  {% else %}
+                  <span class="glyphicon glyphicon-warning-sign" style="color:red ; font-size:1.5em"></span>
+                  {% endif %}
+                </th>
               </tr>
         
         

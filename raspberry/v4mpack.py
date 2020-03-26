@@ -396,6 +396,14 @@ def gnss_localization():
     print(packet.position())
     print(packet.time)
 
+def check_timesync():
+    result = subprocess.run(["chronyc", "-c",  "sources"], stdout=subprocess.PIPE)
+    if result.returncode == 0:
+        for line in result.stdout.decode().split():
+            if line.startswith("#,*,") and 'PPS' in line:
+                return True
+    return False
+
 def cams_set_clocks(cameras_obj, *cams):
     timestamp, answer = cameras_obj.set_clocks(*cams)
     if answer:
@@ -550,6 +558,8 @@ def menu_next_line():
 @app.route('/')
 @app.route('/index')
 def index():
+    general_status = {}
+    general_status['clock_sync'] = check_timesync()
     MyCams.check_cams_status()
     
     cams_status = []
@@ -573,7 +583,7 @@ def index():
 
     # TODO vérifier comment se comporte le serveur web lorsqu'il doit affichier des
     # clé d'un dictionnaire qui n'existent pas.
-    return render_template("index.html", all_cams_status=all_cams_status, cams_status=cams_status)
+    return render_template("index.html", general_status=general_status, all_cams_status=all_cams_status, cams_status=cams_status)
     #return "OK"
 
 @app.route('/ping')
@@ -655,36 +665,6 @@ def cam(cam_name):
     #now cam_obj point to the correct Cam
     data = web_cam_info(cam_obj)
     return render_template("cam.html", title="cam", cam_status=data)
-
-def web_cam_info2(cam_obj):
-    
-    data = {}
-    data['obj'] = cam_obj
-    data['idx'] = cam_obj.idx
-    data['is_on'] = cam_obj.is_on
-    data['name'] = cam_obj.name
-    data['online'] = cam_obj.online
-
-    if cam_obj.is_on == None or (cam_obj.is_on == True and cam_obj.online != True):
-        #we don't know if cam is on
-        #let's ping it
-        #if cam is on, we need to ping it too
-        cams_ping(MyCams, cam_obj, timeout=2)
-        data['online'] = cam_obj.online
-
-    if cam_obj.online == True:
-        data['online'] = cam_obj.online
-        data['is_on'] = cam_obj.is_on
-        cam_obj.get_battery()
-        cam_obj.get_storage_info()
-        cam_obj.get_image_capture_infos()
-        data.update(cam_obj.status)
-        data['image_size'] = data['image_size'].split()[0]
-        data['free_space'] = round(data['free_space']/1048576, 2)
-        data['total_space'] = round(data['total_space']/1048576, 2)
-        data['clock'] = cam_obj.get_setting('camera_clock').get('param')
-
-    return data
 
 def web_cam_info(cam_obj):
     
