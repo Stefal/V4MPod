@@ -6,15 +6,14 @@
                 <a href="{{ url_for('web_pwr_down') }}">Power down all cams</a>
                 <div class="bs-example">
                         {% for cam_status in cams_status %}
-                                {% if cam_status.status == none %}
+                                {% if cam_status.online == none %}
                                 <button type="button" class="btn btn-light">?</button>
-                                {% elif cam_status.status == true %}
+                                {% elif cam_status.online == true %}
                                 <button type="button" class="btn btn-success">&nbsp;</button>
-                                {% elif cam_status.status == false %}
+                                {% elif cam_status.online == false %}
                                 <button type="button" class="btn btn-danger">&nbsp;</button>
                                 {% endif %}
                         {% endfor %}
-                    
                     </div>
         </p></div>
         <div><p>
@@ -22,4 +21,10 @@
                 <a href="{{ url_for('web_set_clocks') }}">Set clocks for all cams</a><br />
                 <a href="{{ url_for('web_ping')  }}">ping</a>
         </p></div>
+        <div>
+                {% for cam_status in cams_status %}
+                        {% include '_cam_info.html' %}
+                {% endfor %} 
+
+        </div>
 {% endblock %}

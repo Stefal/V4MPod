@@ -1,6 +1,3 @@
-{% extends "base.html" %}
-
-{% block app_content %}
 <h2>{{ cam_status.name }}_________________</h2>
 <div class="container">
   <table class="table table-striped table-hover table-condensed">
@@ -11,13 +8,15 @@
       <th>
         <label>
           {% if cam_status.is_on == True %}
-          <a href="{{ url_for('web_pwr_down, id=0') }}">
-          <span class="glyphicon glyphicon-off" style="color:green ; font-size:1.5em"></span>
+          <a href="{{ url_for('web_pwr_down', id=cam_status.idx) }}">
+              <span class="glyphicon glyphicon-off" style="color:green ; font-size:1.5em"></span>
           </a>
           {% elif cam_status.is_on == False %}
-          <span class="glyphicon glyphicon-off" style="color:gray ; font-size:1.5em"></span>
+          <a href="{{ url_for('web_pwr_up', id=cam_status.idx) }}">
+              <span class="glyphicon glyphicon-off" style="color:red ; font-size:1.5em"></span>
+          </a>
           {% elif cam_status.is_on == None %}
-          <span class="glyphicon glyphicon-off" style="color:whitesmoke ; font-size:1.5em"></span>
+              <span class="glyphicon glyphicon-off" style="color:gray ; font-size:1.5em"></span>
           {% endif %}
         </label>
       </th>
@@ -53,7 +52,8 @@
     Battery:
   </th>
   <th>
-     {% if cam_status.battery_level < 20 %}
+    {# we need to check if the battery_leve key exists or it will freeze #}
+     {% if cam_status.battery_level and cam_status.battery_level < 20 %}
      <span style="color:red">{{ cam_status.battery_level }}%</span>
      {% else %}
      {{ cam_status.battery_level }}%
@@ -103,5 +103,3 @@
   </tr>
   </table>
 </div>
-
-{% endblock %}

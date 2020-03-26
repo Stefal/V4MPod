@@ -265,6 +265,9 @@ class Yi2K_cams_ctrl(object):
         for cam_info in cams_info:
             self.cams_list.append(cam_info)
             self.cams_range = self.cams_range | cam_info.bit
+            # push the position in the list to the single cam attribute
+            # dirty or not ??
+            cam_info.idx = self.cams_list.index(cam_info)
         
     def connect(self, serial = None, baud = None):
         # Initialize an ArduinoBoard instance.  This is where you specify baud rate and
@@ -407,6 +410,7 @@ class Yi2K_cams_ctrl(object):
         """
         for cam_info in cams_info:
             cam_info.is_on = False
+            cam_info.online = False
         #logfile.write(str(down_return) + "\n")
         return timestamp, down_return, bin(cams_bits)
 
@@ -481,11 +485,14 @@ class Yi2K_cams_ctrl(object):
                 #cam_range aussitôt. Il pourrait être préférable de demander
                 #une action de l'utilisateur pour désactiver une caméra qui ne
                 #serait pas joignable.
+                
                 self.cams_range = self.cams_range | cam_info.bit
                 cam_info.online = True
                 cam_info.is_on = True
             else:
-                self.cams_range = self.cams_range & (0b11111111 ^ cam_info.bit)
+                #TODO ce n'est clairement pas bien, car si je ping une caméra non allumée,
+                # elle devient impossible à allumer pusique disparue du cam_range.
+                #self.cams_range = self.cams_range & (0b11111111 ^ cam_info.bit)
                 cam_info.online = False
 
         result = True

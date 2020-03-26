@@ -552,8 +552,10 @@ def menu_next_line():
 def index():
     cams_status = []
     for cam in MyCams.cams_list:
-        cams_status.append({'name' : cam.name, 'status' : MyCams.is_online(cam)})
-
+        cams_status.append(web_cam_info(cam))
+    print("index: ", cams_status)
+    # TODO vérifier comment se comporte le serveur web lorsqu'il doit affichier des
+    # clé d'un dictionnaire qui n'existent pas.
     return render_template("index.html", cams_status=cams_status)
     #return "OK"
 
@@ -567,13 +569,25 @@ def login():
     pass
 
 @app.route('/pwr_up')
-def web_pwr_up():
-    answer = cams_power_up(MyCams)
+@app.route('/pwr_up/<int:id>')
+def web_pwr_up(id=99):
+    if id == 99:
+        #fake value to say "all cams"
+        answer = cams_power_up(MyCams)
+    elif id <= len(MyCams.cams_list):
+        answer = cams_power_up(MyCams, MyCams.cams_list[id])
+
     return redirect(url_for("index"))
 
 @app.route('/pwr_down')
-def web_pwr_down():
-    answer = cams_power_down(MyCams)
+@app.route('/pwr_down/<int:id>')
+def web_pwr_down(id=99):
+    if id == 99:
+        #fake value to say "all cams"
+        answer = cams_power_down(MyCams)
+    elif id <= len(MyCams.cams_list):
+        answer = cams_power_down(MyCams, MyCams.cams_list[id])
+
     return redirect(url_for("index"))
 
 @app.route('/session', methods=['GET', 'POST'])
@@ -614,20 +628,46 @@ def web_set_clocks():
         flash('FAILED: Clocks set')
     return redirect(url_for('index'))
 
-@app.route('/cam')
-def cam():
-    Cam1.get_battery()
-    Cam1.get_storage_info()
-    Cam1.get_image_capture_infos()
-    data = Cam1.status
-    data['is_on'] = Cam1.is_on
-    data['name'] = Cam1.name
-    data['online'] = Cam1.online
-    data['image_size'] = data['image_size'].split()[0]
-    data['free_space'] = round(data['free_space']/1024/1024, 2)
-    data['total_space'] = round(data['total_space']/1024/1024, 2)
-    data['clock'] = Cam1.get_setting('camera_clock').get('param')
+@app.route('/<cam_name>')
+def cam(cam_name):
+    print("cam name: ", cam_name)
+    #find cam from cam name in the cam list:
+    cam_listname = [cam.name for cam in MyCams.cams_list]
+    idx = cam_listname.index(cam_name)
+    cam_obj = MyCams.cams_list[idx]
+    #now cam_obj point to the correct Cam
+    data = web_cam_info(cam_obj)
     return render_template("cam.html", title="cam", cam_status=data)
+
+def web_cam_info(cam_obj):
+    
+    data = {}
+    data['obj'] = cam_obj
+    data['idx'] = cam_obj.idx
+    data['is_on'] = cam_obj.is_on
+    data['name'] = cam_obj.name
+    data['online'] = cam_obj.online
+
+    if cam_obj.is_on == None or (cam_obj.is_on == True and cam_obj.online != True):
+        #we don't know if cam is on
+        #let's ping it
+        #if cam is on, we need to ping it too
+        cams_ping(MyCams, cam_obj, timeout=2)
+        data['online'] = cam_obj.online
+
+    if cam_obj.online == True:
+        data['online'] = cam_obj.online
+        data['is_on'] = cam_obj.is_on
+        cam_obj.get_battery()
+        cam_obj.get_storage_info()
+        cam_obj.get_image_capture_infos()
+        data.update(cam_obj.status)
+        data['image_size'] = data['image_size'].split()[0]
+        data['free_space'] = round(data['free_space']/1048576, 2)
+        data['total_space'] = round(data['total_space']/1048576, 2)
+        data['clock'] = cam_obj.get_setting('camera_clock').get('param')
+
+    return data
 
 menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, pic_id=1"},
 {"Name":"Power up Cams", "Func":"cams_power_up", "Param":"MyCams"},
@@ -665,18 +705,17 @@ back=menu.create_blanck_img()
 img_menu_top = menu.create_full_img(menuA[0])
 current_img=menu.select_line(img_menu_top, back, 1, disp)
 new_session("première_session", restart_gnss_log=True)
-Cam1 = Yi2K_ctrl.Yi2K_cam_info("Cam avant", 0b1, "192.168.43.10")
-Cam2 = Yi2K_ctrl.Yi2K_cam_info("Cam droite", 0b10, "192.168.43.11")
-Cam3 = Yi2K_ctrl.Yi2K_cam_info("Cam arriere", 0b100, "192.168.43.12")
-Cam4 = Yi2K_ctrl.Yi2K_cam_info("Cam gauche", 0b1000, "192.168.43.13")
+Cam1 = Yi2K_ctrl.Yi2K_cam_info("Cam_avant", 0b1, "192.168.43.10")
+Cam2 = Yi2K_ctrl.Yi2K_cam_info("Cam_droite", 0b10, "192.168.43.11")
+Cam3 = Yi2K_ctrl.Yi2K_cam_info("Cam_arriere", 0b100, "192.168.43.12")
+Cam4 = Yi2K_ctrl.Yi2K_cam_info("Cam_gauche", 0b1000, "192.168.43.13")
 MyCams = Yi2K_ctrl.Yi2K_cams_ctrl('/dev/ttyACM0', 115200, Cam1, Cam2, Cam3, Cam4)
 cams_arduino_connect(MyCams)
 #check if interactive mode is enabled
 arg_parser()
-#threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
-app.run(host="0.0.0.0", port=5000, debug=True)
+threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
+#app.run(host="0.0.0.0", port=5000, debug=True)
 #todo mode deamon pour le thread ??
-
 
 # Loop until user presses CTRL-C
 while keepRunning:
