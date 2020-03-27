@@ -1,99 +1,56 @@
 {% extends "base.html" %}
 
 {% block app_content %}
-<h2>All Cams________________</h2>
 <div class="container">
-        <table class="table table-striped table-hover table-condensed">
-          <tr>
-            <th>
-            Power: 
-            </th>
-            <th>
-              <label>
-                {% if all_cams_status.is_on == True %}
-                <a href="{{ url_for('web_pwr_down') }}">
-                    <span class="glyphicon glyphicon-off" style="color:green ; font-size:1.5em"></span>
-                </a>
-                {% elif all_cams_status.is_on == False %}
-                <a href="{{ url_for('web_pwr_up') }}">
-                    <span class="glyphicon glyphicon-off" style="color:red ; font-size:1.5em"></span>
-                </a>
-                {% elif all_cams_status.is_on == None %}
-                <a href="{{ url_for('web_pwr_up') }}">
-                    <span class="glyphicon glyphicon-off" style="color:gray ; font-size:1.5em"></span>
-                </a>
-                {% endif %}
-              </label>
-            </th>
-            <th>
-              Wifi link:
-            </th>
-            <th> 
-              {% for cam_status in cams_status %}
-                  {% if cam_status.online == none %}
-                  <button type="button" class="btn btn-light">?</button>
-                  {% elif cam_status.online == true %}
-                  <button type="button" class="btn btn-success">&nbsp;</button>
-                  {% elif cam_status.online == false %}
-                  <button type="button" class="btn btn-danger">&nbsp;</button>
-                  {% endif %}
-              {% endfor %}
+    <table class="table table-striped table-hover table-condensed">
+        <tr>
+          <th>Session_name:
               </th>
-              </tr>
-              <tr>
-                <th>
-                  Capture mode: 
-                </th>
-                <th>
-                  {% if all_cams_status.system_mode == "capture" %}
-                  <span style="color:green">Photo</span>
-                  {% elif all_cams_status.system_mode == "record" %}
-                  <span style="color:red">Video</span>
-                  {% else %}
-                  <span class="glyphicon glyphicon-warning-sign" style="color:red ; font-size:1.5em"></span>
-                  {% endif %}
-                </th>
-                <th>Clock: </th>
-                <th>
-                  {% if general_status.clock_sync == True %}
-                  <span style="color:green">PPS</span>
-                  {% else %}
-                  <span class="glyphicon glyphicon-warning-sign" style="color:red ; font-size:1.5em"></span>
-                  {% endif %}
-                </th>
-              </tr>
-        
-        
-        <tr>
-          <th>
-          Capture size:
-        </th>
-        <th>{% if all_cams_status.image_size != None %}
-          <span style="color:green">{{ all_cams_status.image_size }}</span>
-            {% else %}
-            <span class="glyphicon glyphicon-warning-sign" style="color:red ; font-size:1.5em"></span>
-            {% endif %}
-          </th>
-          <th>metering:
-          </th>
-          <th>
-            {% if all_cams_status.meter_mode != None %}
-            <span style="color:green">{{ all_cams_status.meter_mode }}</span>
-             {% else %}
-             <span class="glyphicon glyphicon-warning-sign" style="color:red ; font-size:1.5em"></span>
-            {% endif %}
-             </th>
+              <th>
+                  {{ data.session_name }}
+              </th>
         </tr>
         <tr>
-          <th><a href="{{ url_for('web_send_settings') }}">Send settings</a></th>
-          <th><a href="{{ url_for('web_set_clocks') }}">Set clocks for all cams</a></th>
+            <th>Pic count:</th>
+            <th>{{ data.pic_count }}</th>
         </tr>
-        </table>
-      </div>
-        <div>
-                {% for cam_status in cams_status %}
-                        {% include '_cam_info.html' %}
-                {% endfor %} 
-
-        </div>
+        <tr>
+            <th>Errors:</th>
+            <th>{{ data.errors }}</th>
+        </tr>
+    </table>
+</div>
+<div class="container text-center">
+<button type="button" class="btn btn-primary btn-lg">
+    <a href="{{ url_for('web_take_pic') }}" style="color:whitesmoke">
+    Take Pic
+    </a>
+    <br />
+</button>
+</div>
+<div class="container text-center">
+    <br />
+<button type="button" class="btn btn-primary">
+    <a href="{{ url_for('web_take_pic', option='init') }}" style="color:whitesmoke">
+    Take initializing Pic
+</a>
+</button> 
+<br><br><br><br>
+</div>
+<button type="button" class="btn btn-warning btn-block">
+    <a href="{{ url_for('web_command', cmd='reboot') }}" style="color:whitesmoke">
+    Restart
+     </a>
+    </button>
+<button type="button" class="btn btn-danger btn-block">
+    <a href="{{ url_for('web_command', cmd='exit_prog') }}" style="color:whitesmoke">
+    Exit
+    </a>
+</button>
+<button type="button" class="btn btn-danger btn-block">
+    <a href="{{ url_for('web_command', cmd='power_down') }}" style="color:whitesmoke">
+    Shutdown
+    </a>
+</button> 
+</div>
 {% endblock %}

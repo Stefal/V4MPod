@@ -446,9 +446,12 @@ def exit_loop():
     global keepRunning
     keepRunning=False
 
-def power_down_pi():
+def power_down_pi(reboot=False):
     exit_prog()
-    os.system("sudo shutdown -h now")
+    if reboot:
+        os.system("sudo reboot")
+    else:
+        os.system("sudo shutdown -h now")
         
 def exit_prog():
     #TODO : stop the flush thread
@@ -562,6 +565,25 @@ def menu_next_line():
 @app.route('/')
 @app.route('/index')
 def index():
+    data={}
+    data['session_name'] = os.path.basename(logfile.name)
+    data['pic_count'] = MyCams.pic_count
+    data['errors'] = MyCams.shutter_error
+    return render_template("index.html", data = data)
+
+@app.route('/take_pic')
+@app.route('/take_pic/<option>')
+def web_take_pic(option=None):
+    if option == 'init':
+        cams_take_first_pic(MyCams)
+    else:
+        answer = cams_takePic(MyCams, logqueue)
+
+    flash(answer)
+    return redirect(url_for("index"))
+
+@app.route('/cams_ctrl')
+def web_cams_ctrl():
     general_status = {}
     general_status['clock_sync'] = check_timesync()
     MyCams.check_cams_status()
@@ -585,12 +607,12 @@ def index():
     print("separate cams: ", cams_status)
     print("alls cams: ", all_cams_status)
 
-    return render_template("index.html", general_status=general_status, all_cams_status=all_cams_status, cams_status=cams_status)
+    return render_template("cams_ctrl.html", general_status=general_status, all_cams_status=all_cams_status, cams_status=cams_status)
 
 @app.route('/ping')
 def web_ping():
     cams_ping(MyCams, timeout=1)
-    return redirect(url_for("index"))
+    return redirect(url_for("web_cams_ctrl"))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -605,7 +627,7 @@ def web_pwr_up(id=99):
     elif id <= len(MyCams.cams_list):
         answer = cams_power_up(MyCams, MyCams.cams_list[id])
 
-    return redirect(url_for("index"))
+    return redirect(url_for("web_cams_ctrl"))
 
 @app.route('/pwr_down')
 @app.route('/pwr_down/<int:id>')
@@ -616,7 +638,7 @@ def web_pwr_down(id=99):
     elif id <= len(MyCams.cams_list):
         answer = cams_power_down(MyCams, MyCams.cams_list[id])
 
-    return redirect(url_for("index"))
+    return redirect(url_for("web_cams_ctrl"))
 
 @app.route('/session', methods=['GET', 'POST'])
 def web_session():
@@ -645,7 +667,7 @@ def web_send_settings():
         flash('Settings sent')
     else:
         flash('FAILED: Settings sent')
-    return redirect(url_for('index'))
+    return redirect(url_for('web_cams_ctrl'))
 
 @app.route('/set_clocks')
 def web_set_clocks():
@@ -654,7 +676,7 @@ def web_set_clocks():
         flash('Clocks set')
     else:
         flash('FAILED: Clocks set')
-    return redirect(url_for('index'))
+    return redirect(url_for('web_cams_ctrl'))
 
 @app.route('/set_setting/<setting_type>/<setting_value>')
 def web_set_setting(setting_type= None, setting_value= None):
@@ -670,7 +692,7 @@ def web_set_setting(setting_type= None, setting_value= None):
     else:
         flash('FAILED: Setting sent')
 
-    return redirect(url_for('index'))
+    return redirect(url_for('web_cams_ctrl'))
 
 @app.route('/<cam_name>')
 def cam(cam_name):
@@ -682,6 +704,18 @@ def cam(cam_name):
     #now cam_obj point to the correct Cam
     data = web_cam_info(cam_obj)
     return render_template("cam.html", title="cam", cam_status=data)
+
+@app.route('/command/<cmd>')
+def web_command(cmd):
+    if cmd == 'reboot':
+        power_down_pi(reboot=True)
+    elif cmd == 'exit_prog':
+        exit_prog()
+    elif cmd == 'power_down':
+        power_down_pi()
+
+    return redirect(url_for('index'))
+
 
 def web_cam_info(cam_obj):
     
