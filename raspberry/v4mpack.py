@@ -349,7 +349,6 @@ def cams_ping(camera_obj, *cams, timeout=10):
     logfile.write(str(timestamp) + "," + str(answer) + "\n")
     return answer
 
-
 def start_gnss_log(gnss_session_name):
     try:
         now = datetime.datetime.now()
@@ -414,6 +413,11 @@ def cams_set_clocks(cameras_obj, *cams):
         logfile.write(str(timestamp) + "," + "Yi set clock: Can't set clock, communication error" + "\n")
         beep(0.4, 0.1, 2)
         return False
+def cams_set_setting(camera_obj, setting_type, setting_value, *cams):
+    #setting is a tuple with setting type and setting param/value
+    timestamp, answer = camera_obj.set_setting(setting_type, setting_value, *cams)
+    logfile.write(str(timestamp) + "," + str(setting_type) + "," + str(setting_value) + "," + str(answer) + "\n")
+    return answer
 
 def cams_send_file_settings(cameras_obj, file_path, *cams):
     answer = cameras_obj.send_file_settings(file_path, *cams)
@@ -581,10 +585,7 @@ def index():
     print("separate cams: ", cams_status)
     print("alls cams: ", all_cams_status)
 
-    # TODO vérifier comment se comporte le serveur web lorsqu'il doit affichier des
-    # clé d'un dictionnaire qui n'existent pas.
     return render_template("index.html", general_status=general_status, all_cams_status=all_cams_status, cams_status=cams_status)
-    #return "OK"
 
 @app.route('/ping')
 def web_ping():
@@ -653,6 +654,22 @@ def web_set_clocks():
         flash('Clocks set')
     else:
         flash('FAILED: Clocks set')
+    return redirect(url_for('index'))
+
+@app.route('/set_setting/<setting_type>/<setting_value>')
+def web_set_setting(setting_type= None, setting_value= None):
+    #Send a setting to all cameras
+    #TODO checking authorized type/value should be in the Yi2K_ctrl class
+    if setting_type in ['meter_mode', 'photo_size', 'system_mode']:
+        answer = cams_set_setting(MyCams, setting_type, setting_value)
+    else:
+        answer = False
+    
+    if answer:
+        flash('Setting sent')
+    else:
+        flash('FAILED: Setting sent')
+
     return redirect(url_for('index'))
 
 @app.route('/<cam_name>')

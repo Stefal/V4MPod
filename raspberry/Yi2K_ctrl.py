@@ -108,7 +108,7 @@ class Yi2K_cam_info(object):
 
     def set_setting(self, setting_type, setting_value):
         #TODO : use dict.get(key) instead of dict[key]
-
+        # example:
         # photo size :
         # set_setting("photo_size", "16M (4608x3456 4:3) / 8M (3264x2448 4:3)"")
         # meter mode
@@ -186,7 +186,7 @@ class Yi2K_cam_info(object):
             return False
             
     def get_storage_info(self):
-        if self._socket_connect():
+        if self.is_on and self._socket_connect():
             # get total space
             data = {"msg_id": self.MSG_STORAGE_USAGE, "type": "total"}
             data['token'] = self.token
@@ -210,7 +210,9 @@ class Yi2K_cam_info(object):
             return False
             
     def send_settings(self, *settings):
-        if self._socket_connect():
+        #sending already formated settings to the camera
+        #:settings is one or several dict
+        if self.is_on and self._socket_connect():
             start_time = time.time()
             for setting in settings:
                 setting['token'] = self.token
@@ -448,14 +450,14 @@ class Yi2K_cams_ctrl(object):
 
         return timestamp, True
 
-    def send_settings(self, settings, *cams_info):
+    def set_setting(self, setting_type, setting_value, *cams_info):
         if len(cams_info) == 0:
             cams_info = self.cams_list
         timestamp=time.time()
         try:
             for cam_info in cams_info:
-                if not cam_info.send_settings(*settings):
-                    raise IOError("Can't send setting to {}".format(cam_info.ip))
+                if not cam_info.set_setting(setting_type, setting_value):
+                    raise IOError("Can't send setting to {}".format(cam_info.name))
         except IOError as e:
             return timestamp, False
 
