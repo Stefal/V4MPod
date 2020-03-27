@@ -368,13 +368,14 @@ class Yi2K_cams_ctrl(object):
     def power_up(self, *cams_info):
         
         if len(cams_info) == 0:
-            cams_bits = self.cams_range
             cams_info = self.cams_list
 
-        else:
-            cams_bits = 0
-            for cam_info in cams_info:
-                cams_bits = cams_bits | cam_info.bit 
+
+        cams_bits = 0
+        for cam_info in cams_info:
+            #check if cam is already on
+            if not cam_info.is_on:
+                cams_bits = cams_bits | cam_info.bit
 
         timestamp=time.time()
         self.c.send("KPower_up", cams_bits)
@@ -397,12 +398,14 @@ class Yi2K_cams_ctrl(object):
     def power_down(self, *cams_info):
         
         if len(cams_info) == 0:
-            cams_bits = self.cams_range
             cams_info = self.cams_list
-        else:
-            cams_bits = 0
-            for cam_info in cams_info:
+        
+        cams_bits = 0
+        for cam_info in cams_info:
+            #check if cam is really on
+            if cam_info.is_on:
                 cams_bits = cams_bits | cam_info.bit
+    
         timestamp=time.time()
         self.c.send("KPower_down", cams_bits)
         down_return=self.c.receive()
