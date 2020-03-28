@@ -1,9 +1,14 @@
 {% extends "base.html" %}
 
 {% block app_content %}
+<style>  
+  table.vert-align-middle > tbody > tr > th {
+  vertical-align: middle
+  }
+</style>
 <h2>All Cams________________</h2>
-<div class="container">
-        <table class="table table-striped table-hover table-condensed">
+<div style="padding-left:1em">
+        <table class="table table-striped table-hover table-condensed vert-align-middle">
           <tr>
             <th>
             Power: 

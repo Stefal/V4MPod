@@ -1,5 +1,9 @@
 {% extends 'bootstrap/base.html' %}
-
+<style>  
+    table.vert-align-middle > tbody > tr > th {
+    vertical-align: middle
+    }
+  </style>
 {% block title %}
 {% if title %}{{ title }}{% else %}V4MPACK{% endif %}
 {% endblock %}
