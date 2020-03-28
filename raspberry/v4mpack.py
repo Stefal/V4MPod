@@ -588,6 +588,8 @@ def index():
     data['errors'] = MyCams.shutter_error
     return render_template("index.html", data = data)
 
+#tuto used for login:
+# https://infinidum.com/2018/08/18/making-a-simple-login-system-with-flask-login/
 @app.route('/login', methods=['GET', 'POST'])
 def web_login():
     form = LoginForm()
