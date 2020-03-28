@@ -24,10 +24,17 @@ from PIL import ImageFont
 from flask import Flask, render_template, url_for, redirect, flash
 from flask_config import Config
 from flask_forms import SessionForm
+from flask_forms import LoginForm
 from flask_bootstrap import Bootstrap
+from flask_bootstrap import StaticCDN
+from flask_login import LoginManager
+
 app = Flask(__name__)
 app.config.from_object(Config)
+login = LoginManager(app)
 Bootstrap = Bootstrap(app)
+app.extensions['bootstrap']['cdns']['bootstrap'] = StaticCDN()
+app.extensions['bootstrap']['cdns']['jquery'] = StaticCDN()
 
 cam_range=0b00001111
 global cams_up
@@ -615,8 +622,17 @@ def web_ping():
     return redirect(url_for("web_cams_ctrl"))
 
 @app.route('/login', methods=['GET', 'POST'])
-def login():
-    pass
+def web_login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        if new_session(form.username.data, form.password.data):
+            flash('Login: {}, Password : {}'.format(
+            form.username.data, form.password.data))
+        else:
+            flash('FAILED: Login: {}, Password : {}'.format(
+            form.username.data, form.password.data))
+        return redirect(url_for('index'))
+    return render_template("login.html", title="Login", form=form)
 
 @app.route('/pwr_up')
 @app.route('/pwr_up/<int:id>')

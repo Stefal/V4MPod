@@ -2,7 +2,7 @@
 {% block styles %}
 {{super()}}
 <link rel="stylesheet"
-      href="{{url_for('.static', filename='my_style.css')}}">
+      href="{{url_for('.static', filename='css/my_style.css')}}">
 {% endblock %}
 {% block title %}
 {% if title %}{{ title }}{% else %}V4MPACK{% endif %}
@@ -29,7 +29,7 @@
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
                     
-                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                    <li><a href="{{ url_for('web_login') }}">Login</a></li>
                     
                 </ul>
             </div>
