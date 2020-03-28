@@ -27,11 +27,12 @@ from flask_forms import SessionForm
 from flask_forms import LoginForm
 from flask_bootstrap import Bootstrap
 from flask_bootstrap import StaticCDN
-from flask_login import LoginManager
+from flask_login import LoginManager, login_user, logout_user, login_required, UserMixin
 
 app = Flask(__name__)
 app.config.from_object(Config)
 login = LoginManager(app)
+login.login_view = 'web_login'
 Bootstrap = Bootstrap(app)
 app.extensions['bootstrap']['cdns']['bootstrap'] = StaticCDN()
 app.extensions['bootstrap']['cdns']['jquery'] = StaticCDN()
@@ -569,8 +570,17 @@ def menu_next_line():
     except:
         None
 
+@login.user_loader
+def load_user(user_id):
+    return User(user_id)
+
+class User(UserMixin):
+  def __init__(self,id):
+    self.id = id
+
 @app.route('/')
 @app.route('/index')
+@login_required
 def index():
     data={}
     data['session_name'] = os.path.basename(logfile.name)
@@ -578,8 +588,22 @@ def index():
     data['errors'] = MyCams.shutter_error
     return render_template("index.html", data = data)
 
+@app.route('/login', methods=['GET', 'POST'])
+def web_login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        if form.password.data == 'admin':
+            login_user(User(1))
+            flash('Successfuly logged in')
+            return redirect(url_for('index'))
+        else:
+            flash('Log in failed!')
+            return redirect(url_for('web_login'))
+    return render_template("login.html", title="Login", form=form)
+
 @app.route('/take_pic')
 @app.route('/take_pic/<option>')
+@login_required
 def web_take_pic(option=None):
     if option == 'init':
         cams_take_first_pic(MyCams)
@@ -590,6 +614,7 @@ def web_take_pic(option=None):
     return redirect(url_for("index"))
 
 @app.route('/cams_ctrl')
+@login_required
 def web_cams_ctrl():
     general_status = {}
     general_status['clock_sync'] = check_timesync()
@@ -617,25 +642,14 @@ def web_cams_ctrl():
     return render_template("cams_ctrl.html", general_status=general_status, all_cams_status=all_cams_status, cams_status=cams_status)
 
 @app.route('/ping')
+@login_required
 def web_ping():
     cams_ping(MyCams, timeout=1)
     return redirect(url_for("web_cams_ctrl"))
 
-@app.route('/login', methods=['GET', 'POST'])
-def web_login():
-    form = LoginForm()
-    if form.validate_on_submit():
-        if new_session(form.username.data, form.password.data):
-            flash('Login: {}, Password : {}'.format(
-            form.username.data, form.password.data))
-        else:
-            flash('FAILED: Login: {}, Password : {}'.format(
-            form.username.data, form.password.data))
-        return redirect(url_for('index'))
-    return render_template("login.html", title="Login", form=form)
-
 @app.route('/pwr_up')
 @app.route('/pwr_up/<int:id>')
+@login_required
 def web_pwr_up(id=99):
     if id == 99:
         #fake value to say "all cams"
@@ -647,6 +661,7 @@ def web_pwr_up(id=99):
 
 @app.route('/pwr_down')
 @app.route('/pwr_down/<int:id>')
+@login_required
 def web_pwr_down(id=99):
     if id == 99:
         #fake value to say "all cams"
@@ -657,6 +672,7 @@ def web_pwr_down(id=99):
     return redirect(url_for("web_cams_ctrl"))
 
 @app.route('/session', methods=['GET', 'POST'])
+@login_required
 def web_session():
     form = SessionForm()
     if form.validate_on_submit():
@@ -669,14 +685,8 @@ def web_session():
         return redirect(url_for('index'))
     return render_template("session.html", title="Session", form=form)
 
-@app.route('/status')
-def web_status():
-    #cam_range = str(cam_range)
-    cam_status = str(MyCams.cams_on)
-    pic_count = str(MyCams.pic_count)
-    error = str(MyCams.shutter_error)
-    return cam_status + pic_count + error
 @app.route('/send_settings')
+@login_required
 def web_send_settings():
     result1 = cams_send_file_settings(MyCams, '/home/pi/V4MPod/raspberry/Yi2k_scripts/options_v4mpack_json.txt')
     if result1:
@@ -686,6 +696,7 @@ def web_send_settings():
     return redirect(url_for('web_cams_ctrl'))
 
 @app.route('/set_clocks')
+@login_required
 def web_set_clocks():
     result1 = cams_set_clocks(MyCams)
     if result1:
@@ -695,6 +706,7 @@ def web_set_clocks():
     return redirect(url_for('web_cams_ctrl'))
 
 @app.route('/set_setting/<setting_type>/<setting_value>')
+@login_required
 def web_set_setting(setting_type= None, setting_value= None):
     #Send a setting to all cameras
     #TODO checking authorized type/value should be in the Yi2K_ctrl class
@@ -711,6 +723,7 @@ def web_set_setting(setting_type= None, setting_value= None):
     return redirect(url_for('web_cams_ctrl'))
 
 @app.route('/<cam_name>')
+@login_required
 def cam(cam_name):
     print("cam name: ", cam_name)
     #find cam from cam name in the cam list:
@@ -722,6 +735,7 @@ def cam(cam_name):
     return render_template("cam.html", title="cam", cam_status=data)
 
 @app.route('/command/<cmd>')
+@login_required
 def web_command(cmd):
     if cmd == 'reboot':
         power_down_pi(reboot=True)
