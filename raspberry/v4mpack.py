@@ -480,7 +480,7 @@ def exit_prog():
     #    print("Erreur en quittant")
     print("Exiting program B")
     print("Exiting V4MPOD")
-    sys.exit()
+    #sys.exit()
 
     
 def open_file(log_session_name):
