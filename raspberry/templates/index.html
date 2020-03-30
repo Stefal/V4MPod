@@ -21,33 +21,23 @@
     </table>
 
 <div class="text-center" style="padding-top:1em; padding-bottom:1em">
-<button type="button" class="btn btn-primary btn-lg">
-    <a href="{{ url_for('web_take_pic') }}" style="color:whitesmoke">
+    <a href="{{ url_for('web_take_pic') }}" class="btn btn-primary btn-lg" style="color:whitesmoke">
     Take Pic
     </a>
-</button>
 </div>
 <div class="text-center" style="padding-top:1em; padding-bottom:1em">
-<button type="button" class="btn btn-primary">
-    <a href="{{ url_for('web_take_pic', option='init') }}" style="color:whitesmoke">
+    <a href="{{ url_for('web_take_pic', option='init') }}" class="btn btn-primary" style="color:whitesmoke">
     Take initializing Pic
 </a>
-</button>
 </div>
-<button type="button" class="btn btn-warning btn-block">
-    <a href="{{ url_for('web_command', cmd='reboot') }}" style="color:whitesmoke">
+    <a href="{{ url_for('web_command', cmd='reboot') }}" class="btn btn-warning btn-block" style="color:whitesmoke">
     Restart
      </a>
-    </button>
-<button type="button" class="btn btn-danger btn-block">
-    <a href="{{ url_for('web_command', cmd='exit_prog') }}" style="color:whitesmoke">
+    <a href="{{ url_for('web_command', cmd='exit_prog') }}" class="btn btn-danger btn-block" style="color:whitesmoke">
     Exit
     </a>
-</button>
-<button type="button" class="btn btn-danger btn-block">
-    <a href="{{ url_for('web_command', cmd='power_down') }}" style="color:whitesmoke">
+    <a href="{{ url_for('web_command', cmd='power_down') }}" class="btn btn-danger btn-block" style="color:whitesmoke">
     Shutdown
     </a>
-</button> 
 </div>
 {% endblock %}
