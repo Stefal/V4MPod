@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# VERSION SIMPLE POUR LES YI 4K
-# JE PREND LE TIMESTAMP DE LA PREMIERE PHOTO, J'AJOUTE 0.5s A LA SUIVANTE ETC...
+#Outil pour chercher les secondes où il y a une seule photo, et les déplacer dans des sous groupes.
 
 import os, sys, datetime
 #from datetime import datetime
@@ -27,10 +26,12 @@ def list_images(directory):
     files = []
     # get DateTimeOriginal data from the images and sort the list by timestamp
     for filepath in file_list:
-        metadata = EXIF(filepath)
-        #metadata.read()
+        
+        
         try:
-            t = metadata.extract_capture_time()
+            filename_timestamp = os.path.basename(filepath).split("s-")[0]
+            
+            t = datetime.datetime.strptime(filename_timestamp, "%Y-%m-%d_%HH%Mmn%S")
             #print t
             #print type(t)
             #s = metadata["Exif.Photo.SubSecTimeOriginal"].value
@@ -138,6 +139,24 @@ def generate_group(a_list):
                 group_list.append(j)
                 
     yield group_list
+    
+def detect_subgroup(img_list):
+
+    subgroup = []
+    for img in img_list:
+        subgroup.append(img)
+        if len(subgroup) == 1:
+            pass
+        elif len(subgroup) > 1 and subgroup[0][1] == img[1]:
+            pass
+        elif len(subgroup) == 2 and subgroup[0][1] != img[1]:
+            print("Trou possible a : ", img[0])
+            subgroup = [subgroup[-1]]
+        elif len(subgroup) > 2 and subgroup[0][1] != img[1]:
+            subgroup = [subgroup[-1]]
+        #print("subgroup : ", subgroup)
+
+        
             
 def move_to_subfolder(file_list, destination_path):
     for file in file_list:
@@ -146,52 +165,22 @@ def move_to_subfolder(file_list, destination_path):
 def main(path):
     images_list=list_images(path)
     print("le chemin est ", path)
+    print("nbr d'image : ", len(images_list))
+    #print(images_list)
 
-    #on créé une nouvelle liste avec des tuples comprenant le chemin des images, leurs datetimeoriginal, et la différence de temps avec la précédente
-    newlist = []
-    for i,pic in enumerate(images_list):
-        newlist.append((images_list[i][0], images_list[i][1], int((images_list[i][1]-images_list[i-1][1]).total_seconds())))
-    
-    print("Nombre d'images : ", len(newlist))
-    #Calcul du délai moyen
-    print("Le delai moyen est :", ((newlist[len(newlist)-1][1]-newlist[0][1]).total_seconds()+1)/len(newlist))
-
-    #print_list(newlist)
-    
-    #Création du générateur
-    group_number = 0
-    for group in generate_group(newlist):
-        #import pdb; pdb.set_trace()
-        #gap_list=[(0,group[0][0],group[0][1])]
-        
-        print("NOUVEAU GROUPE")
-        interpolate_fixed_timestamp(group)
-        group_path = os.path.join(path, "group_" + str(group_number))
-        try:
-            os.mkdir(group_path)
-        except FileExistsError as e:
-            print("Directory already present")
-
-        move_to_subfolder(group, group_path)
-        group_number += 1
-        #print_list(group)
-        
-    #print_list(newlist)
+    detect_subgroup(images_list)
               
     print("End of Script")
 
 if __name__ == '__main__':
-    if len(sys.argv) > 3:
+    if len(sys.argv) > 2:
         print("Usage: python intertime.py path")
         raise IOError("Bad input parameters")
     
     #path="e:\\pic"
     #path="E:\\Mapillary\\2016-09-15"
     path = sys.argv[1]
-    if len(sys.argv) > 2:
-        write_exif_data = sys.argv[2]
-    else:
-        write_exif_data = None
+    
     main(path)
 	
 

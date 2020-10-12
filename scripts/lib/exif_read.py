@@ -156,7 +156,6 @@ class ExifRead:
         if time_field in exif_gps_date_fields()[0]:
             capture_time = self.extract_gps_time()
             return capture_time
-
         if capture_time is 0:
             # try interpret the filename
             try:

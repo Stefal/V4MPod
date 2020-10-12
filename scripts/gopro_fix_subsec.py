@@ -5,6 +5,7 @@
 # JE PREND LE TIMESTAMP DE LA PREMIERE PHOTO, J'AJOUTE 0.5s A LA SUIVANTE ETC...
 
 import os, sys, datetime
+import pprint
 #from datetime import datetime
 from dateutil.tz import tzlocal
 from lib.exif_read import ExifRead as EXIF
@@ -31,8 +32,8 @@ def list_images(directory):
         #metadata.read()
         try:
             t = metadata.extract_capture_time()
-            #print t
-            #print type(t)
+            #print(t)
+            #print(type(t))
             #s = metadata["Exif.Photo.SubSecTimeOriginal"].value
             files.append((filepath, t))
         except KeyError as e:
@@ -98,7 +99,7 @@ def write_metadata(image_list):
         #metadata["Exif.Photo.DateTimeOriginal"] = image[1]
         metadata.add_date_time_original(image[1])
         #metadata["Exif.Photo.SubSecTimeOriginal"] = image[2]
-        metadata.add_subsectimeoriginal(image[2])
+        #metadata.add_subsectimeoriginal(image[2])
         
         metadata.write()
         #print('Writing new timestamp to ', image[0])
@@ -146,38 +147,20 @@ def move_to_subfolder(file_list, destination_path):
 def main(path):
     images_list=list_images(path)
     print("le chemin est ", path)
+    #pp = pprint.PrettyPrinter()
+    #pp.pprint(images_list)
 
-    #on créé une nouvelle liste avec des tuples comprenant le chemin des images, leurs datetimeoriginal, et la différence de temps avec la précédente
-    newlist = []
-    for i,pic in enumerate(images_list):
-        newlist.append((images_list[i][0], images_list[i][1], int((images_list[i][1]-images_list[i-1][1]).total_seconds())))
+    newlist = [(image[0], image[1].replace(microsecond=image[1].microsecond*10)) for image in images_list]
+    #for image in images_list:
+        #fix wrong gopro subsecond value
+        #image = (image[0], image[1].replace(microsecond=image[1].microsecond*10))
+        #image = (image[0], "prout")
+
+        #image[1] = image[1].replace(year=1976)
     
-    print("Nombre d'images : ", len(newlist))
-    #Calcul du délai moyen
-    print("Le delai moyen est :", ((newlist[len(newlist)-1][1]-newlist[0][1]).total_seconds()+1)/len(newlist))
-
-    #print_list(newlist)
-    
-    #Création du générateur
-    group_number = 0
-    for group in generate_group(newlist):
-        #import pdb; pdb.set_trace()
-        #gap_list=[(0,group[0][0],group[0][1])]
-        
-        print("NOUVEAU GROUPE")
-        interpolate_fixed_timestamp(group)
-        group_path = os.path.join(path, "group_" + str(group_number))
-        try:
-            os.mkdir(group_path)
-        except FileExistsError as e:
-            print("Directory already present")
-
-        move_to_subfolder(group, group_path)
-        group_number += 1
-        #print_list(group)
-        
-    #print_list(newlist)
-              
+    #pp.pprint(newlist)
+    write_metadata(newlist)    
+                  
     print("End of Script")
 
 if __name__ == '__main__':
