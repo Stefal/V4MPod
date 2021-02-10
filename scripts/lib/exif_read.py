@@ -174,6 +174,7 @@ class ExifRead:
             sub_sec = "0"
             if not subseconds:
                 sub_sec = self.extract_subsec()
+                
             capture_time = capture_time + \
                 datetime.timedelta(seconds=float("0." + sub_sec))
 
@@ -339,7 +340,7 @@ class ExifRead:
         ]
         sub_sec, _ = self._extract_alternative_fields(
             fields, default='', field_type=str)
-        return sub_sec
+        return sub_sec.strip()
 
     def fields_exist(self, fields):
         '''
