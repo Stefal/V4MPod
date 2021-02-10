@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# les premiers firmware gopro on une erreur sur le stockage de subsectimeoriginal, il faut multiplier la valeur par 10.
 # l'horloge interne est un peu trop lente, il faut corriger le timestamp de 0.007%
 
 import os, sys, datetime
@@ -154,7 +153,9 @@ def main(path):
     newlist = []
     for image in images_list:
         #fix wrong subsecond
-        img_timestamp = image[1].replace(microsecond=image[1].microsecond*10)
+        #Not needed anymore since the latest GoPro Hero Firmware
+        #img_timestamp = image[1].replace(microsecond=image[1].microsecond*10)
+        img_timestamp = image[1]
         #fix rtc drift
         img_timestamp = img_timestamp - ((img_timestamp - starttime) * rtc_fix/100)
         print("ori : {} - new = {}".format(image[1], img_timestamp))
