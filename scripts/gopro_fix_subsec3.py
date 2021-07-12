@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# celui là il est pour chercher à corriger le bug des timestamps compris entre 0 et 100 millisecondes
+
 import os, sys, datetime
 import pprint
 import argparse
@@ -11,7 +13,7 @@ from lib_temp.exif_write import ExifEdit
 
 def arg_parse():
     parser = argparse.ArgumentParser(
-        description="Search for Gopro images with a wrong minute timestamp and fix them"
+        description="Fix the Gopro timestamp drift, and fix the timestamp with a missing 0 in front of the subsectimeoriginal value"
     )
     parser.add_argument(
         "paths",
@@ -138,10 +140,7 @@ def interpolate_fixed_timestamp(image_list, start_time=None, delta=0.5):
         new_subsectimeoriginal="%.6d"%(new_fulltime.microsecond)
         image_with_new_timestamp_list.append((image[0],new_datetimeoriginal, new_subsectimeoriginal))
         
-    
-    #print_list(image_with_new_timestamp_list)
-    write_metadata(image_with_new_timestamp_list)
-    
+ 
 def generate_group(a_list):
     group_list = []
     for i,j in enumerate(a_list):
@@ -162,61 +161,46 @@ def generate_group(a_list):
     yield group_list
             
 def move_to_subfolder(file_list, destination_path):
-    try:
-        os.mkdir(destination_path)
-    except Exception as e:
-        print(e)
     for file in file_list:
-            os.replace(file[0], os.path.join(destination_path, os.path.basename(file[0])))
-
-def fix_err_timestamp(file_list):
-    newlist = []
-    for image in file_list:
-        #fix wrong second
-        new_fulltime= image[1] + datetime.timedelta(minutes=1)
-        newlist.append((image[0], new_fulltime))
-    if not args.nowrite:
-        print("writing new timestamp")
-        write_metadata(newlist)
-        print("nbr de fichiers corrigés : ", len(newlist))
-    else:
-        print("these {} files could be corrected but you selected --nowrite".format(len(newlist)))
-        print(newlist)
-    return newlist
+        os.replace(file[0], os.path.join(destination_path, os.path.basename(file[0])))
 
 def main(path):
     images_list=list_images(path)
     print("le chemin est ", path)
-    pp = pprint.PrettyPrinter()
-    pp.pprint(images_list)
-    
-    movelist = []
-    #print("debug : ", os.path.basename(images_list[0][0]))
-    previous_index = int(os.path.basename(images_list[0][0])[-11:-4])
+    #pp = pprint.PrettyPrinter()
+    #pp.pprint(images_list)
+    starttime = images_list[0][1]
+    rtc_fix = 0.007
+    newlist = []
     for image in images_list:
-        current_index = int(os.path.basename(image[0])[-11:-4])
-        print("previous: {} - current {}".format(previous_index, current_index))
-        if current_index > previous_index + 3:
-            move_img = True
-        elif current_index < previous_index + 1:
-            move_img = False
-        
-        if move_img == True:
-            movelist.append(image)
+        #fix wrong subsecond
+        #Not needed anymore since the latest GoPro Hero Firmware
+        #img_timestamp = image[1].replace(microsecond=image[1].microsecond*10)
+        img_timestamp = image[1]
+        #fix rtc drift
+        img_timestamp = img_timestamp - ((img_timestamp - starttime) * rtc_fix/100)
+        print("ori : {} - new = {}".format(image[1], img_timestamp))
+        newlist.append((image[0], img_timestamp))
 
-        previous_index = current_index
-    #pp.pprint(movelist)
-    fix_err_timestamp(movelist)
+    #for image in images_list:
+        #fix wrong gopro subsecond value
+        #image = (image[0], image[1].replace(microsecond=image[1].microsecond*10))
+        #image = (image[0], "prout")
 
-    pp.pprint(movelist)
-                      
-
+        #image[1] = image[1].replace(year=1976)
+    
+    #pp.pprint(newlist)
+    if not args.nowrite:
+        print("writing new timestamp")
+        write_metadata(newlist)
+                  
 if __name__ == '__main__':
     args=arg_parse()
     for _path in args.paths:
-    #TODO ça marche pas si on indique directemenet le bon dossier à traiter
         for sub_path in [f.path for f in os.scandir(_path) if f.is_dir()]:
             print(sub_path)
             main(sub_path)
 
     print("End of Script")
+	
+

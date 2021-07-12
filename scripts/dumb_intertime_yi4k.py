@@ -1,39 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# VERSION SIMPLE POUR LES YI 4K
+# JE PREND LE TIMESTAMP DE LA PREMIERE PHOTO, J'AJOUTE 0.5s A LA SUIVANTE ETC...
+
 import os, sys, datetime
-import pprint
-import argparse
 #from datetime import datetime
 from dateutil.tz import tzlocal
-from lib_temp.exif_read import ExifRead as EXIF
-from lib_temp.exif_write import ExifEdit
-
-def arg_parse():
-    parser = argparse.ArgumentParser(
-        description="Search for Gopro images with a wrong minute timestamp and fix them"
-    )
-    parser.add_argument(
-        "paths",
-        nargs="+",
-        help="paths to the images folders",
-    )
-    parser.add_argument(
-        "-n",
-        "--nowrite",
-        help="don't write the new timestamp in the image",
-        action="store_true",
-        default=False,
-    ) 
-    parser.add_argument(
-        "-v",
-        "--version",
-        action="version",
-        version="release 0.1"
-    )
-    args = parser.parse_args()
-    print(args)
-    return args
+from lib.exif_read import ExifRead as EXIF
+from lib.exif_write import ExifEdit
 
 def print_list(list):
     for i, image in enumerate(list):
@@ -45,8 +20,9 @@ def list_images(directory):
     @param directory: directory with JPEG files 
     @return: a list of image tuples with time, directory, lat,long...
     '''
-
-    file_list = [os.path.join(os.path.abspath(directory), file) for file in os.listdir(directory) if file.lower().endswith(".jpg")]
+    file_list = []
+    for root, sub_folders, files in os.walk(directory):
+        file_list += [os.path.join(root, filename) for filename in files if filename.lower().endswith(".jpg")]
 
     files = []
     # get DateTimeOriginal data from the images and sort the list by timestamp
@@ -55,8 +31,8 @@ def list_images(directory):
         #metadata.read()
         try:
             t = metadata.extract_capture_time()
-            #print(t)
-            #print(type(t))
+            #print t
+            #print type(t)
             #s = metadata["Exif.Photo.SubSecTimeOriginal"].value
             files.append((filepath, t))
         except KeyError as e:
@@ -122,7 +98,7 @@ def write_metadata(image_list):
         #metadata["Exif.Photo.DateTimeOriginal"] = image[1]
         metadata.add_date_time_original(image[1])
         #metadata["Exif.Photo.SubSecTimeOriginal"] = image[2]
-        #metadata.add_subsectimeoriginal(image[2])
+        metadata.add_subsectimeoriginal(image[2])
         
         metadata.write()
         #print('Writing new timestamp to ', image[0])
@@ -140,7 +116,9 @@ def interpolate_fixed_timestamp(image_list, start_time=None, delta=0.5):
         
     
     #print_list(image_with_new_timestamp_list)
-    write_metadata(image_with_new_timestamp_list)
+    if write_exif_data == "-write":
+        print("Writing exif metadata")
+        write_metadata(image_with_new_timestamp_list)
     
 def generate_group(a_list):
     group_list = []
@@ -162,61 +140,42 @@ def generate_group(a_list):
     yield group_list
             
 def move_to_subfolder(file_list, destination_path):
-    try:
-        os.mkdir(destination_path)
-    except Exception as e:
-        print(e)
     for file in file_list:
-            os.replace(file[0], os.path.join(destination_path, os.path.basename(file[0])))
-
-def fix_err_timestamp(file_list):
-    newlist = []
-    for image in file_list:
-        #fix wrong second
-        new_fulltime= image[1] + datetime.timedelta(minutes=1)
-        newlist.append((image[0], new_fulltime))
-    if not args.nowrite:
-        print("writing new timestamp")
-        write_metadata(newlist)
-        print("nbr de fichiers corrigés : ", len(newlist))
-    else:
-        print("these {} files could be corrected but you selected --nowrite".format(len(newlist)))
-        print(newlist)
-    return newlist
+        os.replace(file[0], os.path.join(destination_path, os.path.basename(file[0])))
 
 def main(path):
     images_list=list_images(path)
     print("le chemin est ", path)
-    pp = pprint.PrettyPrinter()
-    pp.pprint(images_list)
+
+    #on créé une nouvelle liste avec des tuples comprenant le chemin des images, leurs datetimeoriginal, et la différence de temps avec la précédente
+    newlist = []
+    for i,pic in enumerate(images_list):
+        newlist.append((images_list[i][0], images_list[i][1], int((images_list[i][1]-images_list[i-1][1]).total_seconds())))
     
-    movelist = []
-    #print("debug : ", os.path.basename(images_list[0][0]))
-    previous_index = int(os.path.basename(images_list[0][0])[-11:-4])
-    for image in images_list:
-        current_index = int(os.path.basename(image[0])[-11:-4])
-        print("previous: {} - current {}".format(previous_index, current_index))
-        if current_index > previous_index + 3:
-            move_img = True
-        elif current_index < previous_index + 1:
-            move_img = False
-        
-        if move_img == True:
-            movelist.append(image)
+    print("Nombre d'images : ", len(newlist))
+    #Calcul du délai moyen
+    print("Le delai moyen est :", ((newlist[len(newlist)-1][1]-newlist[0][1]).total_seconds()+1)/len(newlist))
 
-        previous_index = current_index
-    #pp.pprint(movelist)
-    fix_err_timestamp(movelist)
-
-    pp.pprint(movelist)
-                      
+    #print_list(newlist)
+    
+    
+    interpolate_fixed_timestamp(images_list)
+    
+              
+    print("End of Script")
 
 if __name__ == '__main__':
-    args=arg_parse()
-    for _path in args.paths:
-    #TODO ça marche pas si on indique directemenet le bon dossier à traiter
-        for sub_path in [f.path for f in os.scandir(_path) if f.is_dir()]:
-            print(sub_path)
-            main(sub_path)
+    if len(sys.argv) > 3:
+        print("Usage: python intertime.py path")
+        raise IOError("Bad input parameters")
+    
+    #path="e:\\pic"
+    #path="E:\\Mapillary\\2016-09-15"
+    path = sys.argv[1]
+    if len(sys.argv) > 2:
+        write_exif_data = sys.argv[2]
+    else:
+        write_exif_data = None
+    main(path)
+	
 
-    print("End of Script")
