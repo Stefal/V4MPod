@@ -37,7 +37,7 @@ Bootstrap = Bootstrap(app)
 app.extensions['bootstrap']['cdns']['bootstrap'] = StaticCDN()
 app.extensions['bootstrap']['cdns']['jquery'] = StaticCDN()
 
-cam_range=0b00001111
+cam_range=0b00111111
 global cams_up
 
 # Set Rpi.GPIO to BCM mode
@@ -333,7 +333,7 @@ def stop_Timelapse():
 
 def cams_take_first_pic(camera_obj, *cams):
     timestamp, answer = camera_obj.take_first_pic(*cams)
-    logfile.write(str(timestamp) + "," + "firs pic: " + "," + str(answer) + "\n")
+    logfile.write(str(timestamp) + "," + "first pic: " + "," + str(answer) + "\n")
     return answer
 
 def cams_arduino_connect(camera_obj):
@@ -807,7 +807,9 @@ Cam1 = Yi2K_ctrl.Yi2K_cam_info("Cam_avant", 0b1, "192.168.43.10")
 Cam2 = Yi2K_ctrl.Yi2K_cam_info("Cam_droite", 0b10, "192.168.43.11")
 Cam3 = Yi2K_ctrl.Yi2K_cam_info("Cam_arriere", 0b100, "192.168.43.12")
 Cam4 = Yi2K_ctrl.Yi2K_cam_info("Cam_gauche", 0b1000, "192.168.43.13")
-MyCams = Yi2K_ctrl.Yi2K_cams_ctrl('/dev/ttyACM0', 115200, Cam1, Cam2, Cam3, Cam4)
+Cam5 = Yi2K_ctrl.Yi2K_cam_info("Cam_Plafond_droite", 0b10000, "192.168.43.14")
+Cam6 = Yi2K_ctrl.Yi2K_cam_info("Cam_Plafond_gauche", 0b100000, "192.168.43.15")
+MyCams = Yi2K_ctrl.Yi2K_cams_ctrl('/dev/ttyACM0', 115200, Cam1, Cam2, Cam3, Cam4, Cam5, Cam6)
 cams_arduino_connect(MyCams)
 #check if interactive mode is enabled
 arg_parser()

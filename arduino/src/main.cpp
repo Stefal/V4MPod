@@ -23,7 +23,7 @@ int after_pic_delay = 600;
 volatile int shutter_led_counter = 0;
 long old_timestamp = 0;
 long current_timestamp = 0;
-byte cam_range = 0b00001111;
+byte cam_range = 0b00111111;
 
 // MCP23017 registers (everything except direction defaults to 0)
 

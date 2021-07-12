@@ -52,7 +52,7 @@
     Battery:
   </th>
   <th>
-    {# we need to check if the battery_leve key exists or it will freeze #}
+    {# we need to check if the battery_level key exists or it will freeze #}
      {% if cam_status.battery_level and cam_status.battery_level < 20 %}
      <span style="color:red">{{ cam_status.battery_level }}%</span>
      {% else %}

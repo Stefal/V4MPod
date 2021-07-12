@@ -61,7 +61,7 @@ def arg_parse():
     parser.add_argument("destination", nargs="?", help="Path destination for the pictures. Without this parameter, "
                                                        "the script will use the current directory as the destination", default=os.getcwd())
     parser.add_argument("--version", action="version", version="%(prog)s 0.02")
-    parser.add_argument("-s", "--source", help="Name of the volume's sources", default="avant, droite, arriere, gauche")
+    parser.add_argument("-s", "--source", help="Name of the volume's sources", default="avant, droite, arriere, gauche, plafond_droite, plafond_gauche")
     parser.add_argument("-c", "--cut", help="Min time between two pictures to create a new group (in seconds)",
                         default=10, type=int)
     parser.add_argument("-a", "--allgroups", help="Copy all groups of pictures without asking.", action="store_true")
