@@ -690,7 +690,7 @@ def web_session():
 @app.route('/send_settings')
 @login_required
 def web_send_settings():
-    result1 = cams_send_file_settings(MyCams, '/home/pi/V4MPod/raspberry/Yi2k_scripts/options_v4mpack_json.txt')
+    result1 = cams_send_file_settings(MyCams, '/home/pi/V4MPod/raspberry/Yi2k_scripts/options_v6mpack_json.txt')
     if result1:
         flash('Settings sent')
     else:
@@ -813,7 +813,7 @@ MyCams = Yi2K_ctrl.Yi2K_cams_ctrl('/dev/ttyACM0', 115200, Cam1, Cam2, Cam3, Cam4
 cams_arduino_connect(MyCams)
 #check if interactive mode is enabled
 arg_parser()
-threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0'), name="Flask_thread", daemon=True).start()
+threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0', port=5000), name="Flask_thread", daemon=True).start()
 #app.run(host="0.0.0.0", port=5000, debug=True)
 #todo mode deamon pour le thread ??
 
