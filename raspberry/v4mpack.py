@@ -11,6 +11,8 @@ import gpsd #module gpsd-py3
 import threading
 import runpy
 import argparse
+import unicodedata
+import re
 
 import Adafruit_Nokia_LCD as LCD
 import Adafruit_GPIO.SPI as SPI
@@ -438,6 +440,21 @@ def cams_send_file_settings(cameras_obj, file_path, *cams):
         beep(0.4, 0.1, 2)
         return False
         
+def slugify(value, allow_unicode=False):
+    """
+    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+    dashes to single dashes. Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+    """
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^\w\s-]', '', value.lower())
+    return re.sub(r'[-\s]+', '-', value).strip('-_')
 
 def arg_parser():
     """parse the command line"""
@@ -496,8 +513,8 @@ def open_file(log_session_name):
 def new_session(session_name=None, restart_gnss_log=False):
     #TODO vérifier l'état du compteur de photo après création d'une nouvelle session
     global logfile
-    #remove whitespace in session_name
-    session_name = "_".join(session_name.split())
+    #remove whitespace and other unwanted char in session_name
+    session_name = slugify(session_name)
     #Closing current logfile if it exists
     try:
         logfile.write("Close logfile" + "\n")
