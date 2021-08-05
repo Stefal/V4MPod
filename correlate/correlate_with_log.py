@@ -1086,7 +1086,7 @@ def compute_delta3(loglist1, piclist2):
             delta.append((loglist1[i].log_timestamp - piclist2[i].DateTimeOriginal).total_seconds())
         except:
             pass
-            # print("Impossible de calculer le delta")
+            print("Impossible de calculer le delta")
     # print("somme des deltas : ", sum(delta))
     return delta
 
