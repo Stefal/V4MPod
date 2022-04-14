@@ -744,7 +744,7 @@ def web_set_setting(setting_type= None, setting_value= None):
 
     return redirect(url_for('web_cams_ctrl'))
 
-@app.route('/<cam_name>')
+@app.route('/cam/<cam_name>')
 @login_required
 def cam(cam_name):
     print("cam name: ", cam_name)
