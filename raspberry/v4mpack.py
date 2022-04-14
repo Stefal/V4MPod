@@ -52,7 +52,8 @@ int_pin = 17
 GPIO.setup(int_pin, GPIO.IN)
 
 # Channel used for the buzzer
-buzzer_pin = 22
+#buzzer_pin = 22 <- ancien emplacement du buzzer sur le PCB
+buzzer_pin = 25
 GPIO.setup(buzzer_pin, GPIO.OUT)
 
 
@@ -138,18 +139,18 @@ bus.read_byte_data(DEVICE, INTCAPB)
 bus.read_byte_data(DEVICE, INTCAPA) 
 
 #Hall sensor pin
-hall_pin=25
+#hall_pin=25
 
 # Set this channel as input
-GPIO.setup(hall_pin, GPIO.IN)
-GPIO.setup(hall_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+#GPIO.setup(hall_pin, GPIO.IN)
+#GPIO.setup(hall_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def hall_callback(hall_pin):
   print('Edge detected on pin %s' %hall_pin)
   cams_takePic(MyCams,logqueue, pic_id=1)
   lcd_write_text("Picture", 1)
 
-GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
+#GPIO.add_event_detect(hall_pin, GPIO.FALLING, callback=hall_callback)
 
 """
 void handleKeypress ()
