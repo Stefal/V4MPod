@@ -805,7 +805,7 @@ menuA = [[{"Name":"Take Pic", "Func":"cams_takePic", "Param":"MyCams, logqueue, 
 # Main
 
 splash_boot()
-gnss_fix()
+#gnss_fix()
 keyDown = False
 keyUp = False
 keySelect = False
