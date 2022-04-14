@@ -414,15 +414,17 @@ def check_timesync():
                 return True
     return False
 
-def cams_set_clocks(cameras_obj, *cams):
+def cams_set_clocks(cameras_obj, *cams, beeper = True):
     timestamp, answer = cameras_obj.set_clocks(*cams)
     if answer:
         logfile.write(str(timestamp) + "," + "Yi set clock: OK" + "\n")
-        beep(0.1)
+        if beeper == True :
+            beep(0.1)
         return True
     else:
         logfile.write(str(timestamp) + "," + "Yi set clock: Can't set clock, communication error" + "\n")
-        beep(0.4, 0.1, 2)
+        if beeper == True:
+            beep(0.4, 0.1, 2)
         return False
 def cams_set_setting(camera_obj, setting_type, setting_value, *cams):
     #setting is a tuple with setting type and setting param/value
@@ -837,7 +839,12 @@ threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0', port=5000), name="F
 
 # Loop until user presses CTRL-C
 while keepRunning:
-    time.sleep(0.01)
+    time.sleep(0.05)
+    
+    if time.time() - MyCams.last_sht_time > MyCams.standby_time:
+            cams_set_clocks(MyCams, beeper=False)
+            print("set clocks")
+            MyCams.last_sht_time = time.time()
     if Keypressed:
         handleKeyPress()
     if keyDown:
