@@ -1378,7 +1378,7 @@ def config_parse(profile_name):
 
     import configparser
     config = configparser.ConfigParser()
-    config.read(os.path.dirname(sys.argv[0]) + "\\profile.cfg")
+    config.read(os.path.join(os.path.dirname(sys.argv[0]), "profile.cfg"))
 
     folder_string = config.get(profile_name, "folder_names")
     folder_string = [i.strip() for i in folder_string.split(",")]
