@@ -780,10 +780,19 @@ def web_cam_info(cam_obj):
 
     if cam_obj.online == True:
         data.update(cam_obj.status)
-        data['image_size'] = data['image_size'].split()[0]
-        data['free_space'] = round(data['free_space']/1048576, 2)
-        data['total_space'] = round(data['total_space']/1048576, 2)
-        data['clock'] = cam_obj.get_setting('camera_clock').get('param')
+        try:
+            data['image_size'] = data.get('image_size', 0).split()[0]
+        except:
+            data['image_size'] = '-'
+        try:
+            data['free_space'] = round(data.get('free_space', 0)/1048576, 2)
+        except:
+            data['free_space'] = '-'
+        try:
+            data['total_space'] = round(data.get('total_space', 0)/1048576, 2)
+        except:
+            data['total_space'] = '-'
+        data['clock'] = cam_obj.get_setting('camera_clock').get('param', '-')
     print("{} data: {}".format(data['name'], data))
     return data
 

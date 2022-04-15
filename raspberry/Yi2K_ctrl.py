@@ -40,26 +40,33 @@ class Yi2K_cam_info(object):
         self.MSG_CAPTURE = 769
 
     def _socket_connect(self, timeout=5):
-        srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        srv.connect((self.ip, self.port))
-        srv.settimeout(10)
-        jsondata = json.dumps({"msg_id" : self.MSG_AUTHENTICATE, "token" :  0})
-        srv.send(jsondata.encode())
-        start_timestamp = time.time()
-        token = None
-        while token == None:
-            data = json.loads(srv.recv(512).decode())
-            if "param" in data:
-                token = data["param"]
-            if time.time() - start_timestamp > timeout:
-                break
-        
+        try:
+            token = None
+            srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            srv.connect((self.ip, self.port))
+            srv.settimeout(10)
+            jsondata = json.dumps({"msg_id" : self.MSG_AUTHENTICATE, "token" :  0})
+            srv.send(jsondata.encode())
+            start_timestamp = time.time()
+            while token == None:
+                data = json.loads(srv.recv(512).decode())
+                if "param" in data:
+                    token = data["param"]
+                if time.time() - start_timestamp > timeout:
+                    break
+        except OSError as e:
+            print("{} socket connect error: {}".format(self.name, e))
+            self.online = False
+            self.connected = False
+            self.is_on = None
+            
         if token != None:
             self.token = token
             self.srv = srv
             self.connected = True
             return True
         else:
+            self.connected = False
             return False
 
     def _socket_close(self):
@@ -105,7 +112,7 @@ class Yi2K_cam_info(object):
                 return False
 
             return response
-        return False
+        return {}
 
     def get_all_settings(self):
         #it doesn't' return some informations like free storage
@@ -126,7 +133,7 @@ class Yi2K_cam_info(object):
             return response
 
             return response
-        return False
+        return {}
 
     def set_setting(self, setting_type, setting_value):
         #TODO : use dict.get(key) instead of dict[key]
@@ -205,7 +212,7 @@ class Yi2K_cam_info(object):
             return response
 
         else:
-            return False
+            return {}
             
     def get_storage_info(self):
         if self.is_on and self._socket_connect():
@@ -229,7 +236,7 @@ class Yi2K_cam_info(object):
             
             return total_response, free_response
         else:
-            return False
+            return {}
             
     def send_settings(self, *settings):
         #sending already formated settings to the camera
