@@ -22,6 +22,7 @@ from queue import Queue
 from PIL import Image
 from PIL import ImageDraw
 from PIL import ImageFont
+from concurrent.futures import ThreadPoolExecutor
 
 from flask import Flask, render_template, url_for, redirect, flash
 from flask_config import Config
@@ -643,9 +644,16 @@ def web_cams_ctrl():
     MyCams.check_cams_status()
     
     cams_status = []
-    for cam in MyCams.cams_list:
-        cams_status.append(web_cam_info(cam))
-    
+    workers_cnt = len(MyCams.cams_list) if len(MyCams.cams_list)>0 else 1
+    with ThreadPoolExecutor(max_workers = workers_cnt) as executor:
+        future_lst = []
+        for cam in MyCams.cams_list:
+            future_itm = executor.submit(web_cam_info, cam)
+            future_lst.append(future_itm)
+        for future in future_lst:
+            result = future.result()
+            cams_status.append(result)
+
     #strip imagge_size string
     if not MyCams.cams_image_size == None:
         all_cams_image_size = MyCams.cams_image_size.split()[0]
