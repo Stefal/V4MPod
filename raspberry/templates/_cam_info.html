@@ -16,7 +16,9 @@
               <span class="glyphicon glyphicon-off" style="color:red ; font-size:1.5em"></span>
           </a>
           {% elif cam_status.is_on == None %}
+          <a href="{{ url_for('web_pwr_up', id=cam_status.idx) }}">
               <span class="glyphicon glyphicon-off" style="color:gray ; font-size:1.5em"></span>
+          </a>
           {% endif %}
         </label>
       </th>
