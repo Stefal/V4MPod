@@ -83,9 +83,9 @@ class Yi2K_cam_info(object):
             self.srv.send(tosend.encode())
             self.srv.recv(512)
             self._socket_close()
-            print("Time sets to {}".format(myLocTime))
+            #print("Time sets to {}".format(myLocTime))
             total_time = time.time() - start_time
-            print("temps écoulé : {}".format(total_time))
+            #print("temps écoulé : {}".format(total_time))
             return True
         else:
             return False
@@ -102,6 +102,27 @@ class Yi2K_cam_info(object):
 
             if response['rval'] != 0:
                 return False
+
+            return response
+        return False
+
+    def get_all_settings(self):
+        #it doesn't' return some informations like free storage
+        if self._socket_connect():
+            data = {"msg_id":self.MSG_CONFIG_GET_ALL}
+            data['token'] = self.token
+            jsondata = json.dumps(data)
+            self.srv.send(jsondata.encode())
+            response = json.loads(self.srv.recv(8192).decode())
+            self._socket_close()
+            return response
+
+            if response['rval'] != 0:
+                return False
+            for single_dict in response['param']:
+                response.update(single_dict)
+            response.pop('param')
+            return response
 
             return response
         return False
@@ -514,18 +535,22 @@ class Yi2K_cams_ctrl(object):
         
         if len(cams_info) == 0:
             cams_info = self.cams_list
-        
+        start = datetime.datetime.now()
         for cam_info in cams_info:
             if cam_info.is_on == None or (cam_info.is_on == True and cam_info.online != True):
                 #we don't know if cam is on
                 #let's ping it
                 #if cam is on, we need to ping it too
                 self.ping_cams(cam_info, timeout=2)
-
+            print("Après cam {} ping: {}".format(cam_info.name, datetime.datetime.now()-start))
             if cam_info.online == True:
                 cam_info.get_battery()
+                print("Après cam {} battery: {}".format(cam_info.name, datetime.datetime.now()-start))
                 cam_info.get_storage_info()
+                print("Après cam {} storage: {}".format(cam_info.name, datetime.datetime.now()-start))
                 cam_info.get_image_capture_infos()
+                print("Après cam {} capture infos: {}".format(cam_info.name, datetime.datetime.now()-start))
+            print("Après cam {} infos: {}".format(cam_info.name, datetime.datetime.now()-start))
         
         #merge status of all cams into a single value
         is_on_list = [cam.is_on for cam in self.cams_list]
