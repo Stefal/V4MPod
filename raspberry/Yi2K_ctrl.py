@@ -7,6 +7,7 @@ from os import system
 import re
 import socket
 import json
+from concurrent.futures import ThreadPoolExecutor
 
 #live preview : rtsp://address:554/live
 
@@ -324,6 +325,7 @@ class Yi2K_cams_ctrl(object):
 
         if len(cams_info) == 0:
             cams_bits = self.cams_range
+            cams_info = self.cams_list
         else:
             cams_bits = 0
             for cam_info in cams_info:
@@ -334,8 +336,13 @@ class Yi2K_cams_ctrl(object):
         #We need to wake up them, and one solution is to force sync their clocks
         #BON en fait, non, ça ne fonctionne pas, mais je laisse la resynchro quand même pour le moment.
         if timestamp - self.last_sht_time > self.standby_time:
-            self.set_clocks(*cams_info)
-            print("set clocks")
+            with ThreadPoolExecutor(max_workers = len(cams_info)) as executor:
+                result_lst = []
+                for cam_info in cams_info:
+                    future_itm = executor.submit(self.set_clocks, cam_info)
+                    result_lst.append(future_itm)
+            #print(result_lst)
+            print("clock set")
             timestamp=time.time()
 
         #If the new takePic is too close to the precedent one, the camera won't respond
@@ -536,21 +543,17 @@ class Yi2K_cams_ctrl(object):
         if len(cams_info) == 0:
             cams_info = self.cams_list
         start = datetime.datetime.now()
-        for cam_info in cams_info:
-            if cam_info.is_on == None or (cam_info.is_on == True and cam_info.online != True):
-                #we don't know if cam is on
-                #let's ping it
-                #if cam is on, we need to ping it too
-                self.ping_cams(cam_info, timeout=2)
-            print("Après cam {} ping: {}".format(cam_info.name, datetime.datetime.now()-start))
-            if cam_info.online == True:
-                cam_info.get_battery()
-                print("Après cam {} battery: {}".format(cam_info.name, datetime.datetime.now()-start))
-                cam_info.get_storage_info()
-                print("Après cam {} storage: {}".format(cam_info.name, datetime.datetime.now()-start))
-                cam_info.get_image_capture_infos()
-                print("Après cam {} capture infos: {}".format(cam_info.name, datetime.datetime.now()-start))
-            print("Après cam {} infos: {}".format(cam_info.name, datetime.datetime.now()-start))
+        with ThreadPoolExecutor(max_workers = len(cams_info)) as executor:
+            result_lst=[]
+            for cam_info in cams_info:
+                if cam_info.is_on == None or (cam_info.is_on == True and cam_info.online != True):
+                    #we don't know if cam is on
+                    #let's ping it
+                    #if cam is on, we need to ping it too
+                    future_itm = executor.submit(self.ping_cams(cam_info, timeout=2))
+                    result_lst.append(future_itm)
+        #print(result_lst)
+        #print("Après cam ping: {}".format(datetime.datetime.now()-start))
         
         #merge status of all cams into a single value
         is_on_list = [cam.is_on for cam in self.cams_list]
@@ -564,6 +567,35 @@ class Yi2K_cams_ctrl(object):
             self.cams_online = online_list[0]
         else:
             self.cams_online = None
+        workers_cnt = online_list.count(True) if online_list.count(True) > 0 else len(cams_info)
+        #print("nbre de workers: ", workers_cnt)
+
+        with ThreadPoolExecutor(max_workers = workers_cnt) as executor:
+            result_lst=[]
+            for cam_info in cams_info:
+                if cam_info.online == True:
+                    future_itm = executor.submit(cam_info.get_battery)
+                    result_lst.append(future_itm)
+        #print(result_lst)
+        #print("Après cam battery: {}".format(datetime.datetime.now()-start))
+
+        with ThreadPoolExecutor(max_workers = workers_cnt) as executor:
+            result_lst=[]
+            for cam_info in cams_info:
+                if cam_info.online == True:
+                    future_itm = executor.submit(cam_info.get_storage_info)
+                    result_lst.append(future_itm)
+        #print(result_lst)
+        #print("Après cam storage: {}".format(datetime.datetime.now()-start))
+        
+        with ThreadPoolExecutor(max_workers = workers_cnt) as executor:
+            result_lst=[]
+            for cam_info in cams_info:
+                if cam_info.online == True:
+                    future_itm = executor.submit(cam_info.get_image_capture_infos)
+                    result_lst.append(future_itm)
+        #print(result_lst)
+        #print("Après cam infos: {}".format(datetime.datetime.now()-start))
 
         image_size_list = [cam.status['image_size'] for cam in self.cams_list]
         if image_size_list.count(image_size_list[0]) == len(image_size_list):

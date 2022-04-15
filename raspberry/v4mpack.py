@@ -841,10 +841,10 @@ threading.Thread(target=app.run, kwargs=dict(host='0.0.0.0', port=5000), name="F
 while keepRunning:
     time.sleep(0.05)
     
-    if time.time() - MyCams.last_sht_time > MyCams.standby_time:
-            cams_set_clocks(MyCams, beeper=False)
-            print("set clocks")
-            MyCams.last_sht_time = time.time()
+    #if time.time() - MyCams.last_sht_time > MyCams.standby_time:
+    #        cams_set_clocks(MyCams, beeper=False)
+    #        print("set clocks")
+    #        MyCams.last_sht_time = time.time()
     if Keypressed:
         handleKeyPress()
     if keyDown:
