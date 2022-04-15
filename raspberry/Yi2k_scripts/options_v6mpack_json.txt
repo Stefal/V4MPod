@@ -3,7 +3,7 @@
 
 
 #POSE PROBLEME... BAH NON... SI AVEC LA Z22
-#{"msg_id":2, "type":"system_mode", "param":"capture"}
+{"msg_id":2, "type":"system_mode", "param":"capture"}
 #{"msg_id":2, "type":"system_mode", "param":"record"}
 
 {"msg_id":2, "type":"system_default_mode", "param":"capture"}
