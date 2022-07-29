@@ -164,13 +164,13 @@ def main(path):
     #print(area_dict)
     images_list=list_images(path)
     print("Path is:  ", path)
-    prev_lat = images_list[0][3]
-    prev_long = images_list[0][2]
+    prev_lat = 0
+    prev_long = 0
     #pp = pprint.PrettyPrinter()
     #pp.pprint(images_list)
     starttime = images_list[0][1]
     duplicate_list = []
-    for image in images_list[1:]:
+    for image in images_list:
         current_lat = image[3]
         current_long = image[2]
         img_distance = ComputeDist(prev_lat, prev_long, current_lat, current_long)
