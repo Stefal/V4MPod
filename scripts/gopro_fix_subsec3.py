@@ -26,7 +26,14 @@ def arg_parse():
         help="don't write the new timestamp in the image",
         action="store_true",
         default=False,
-    ) 
+    )
+    parser.add_argument(
+        "-r",
+        "--recursive",
+        help="search images in subdirectory",
+        action="store_true",
+        default=False,
+    )
     parser.add_argument(
         "-v",
         "--version",
@@ -197,9 +204,13 @@ def main(path):
 if __name__ == '__main__':
     args=arg_parse()
     for _path in args.paths:
-        for sub_path in [f.path for f in os.scandir(_path) if f.is_dir()]:
-            print(sub_path)
-            main(sub_path)
+        if args.recursive:
+            for sub_path in [f.path for f in os.scandir(_path) if f.is_dir()]:
+                print(sub_path)
+                main(sub_path)
+        elif not args.recursive:
+            print(_path)
+            main(_path)
 
     print("End of Script")
 	
