@@ -12,7 +12,7 @@ from collections import namedtuple
 import xml.etree.ElementTree as ET
 import urllib.request, urllib.parse, urllib.error
 
-
+#TODO: calculate G force (using image position, and speed), to alert on impossible movement.
 Picture_infos = namedtuple('Picture_infos',
                                ['path', 'DateTimeOriginal', 'SubSecTimeOriginal', "Longitude", "Latitude", "Ele", "ImgDirection"])
 
@@ -23,14 +23,14 @@ def arg_parse():
     parser.add_argument(
         "paths",
         nargs="+",
-        help="paths to the images folders",
+        help="Path(s) to the images folders",
     )
     parser.add_argument(
         "-d",
         "--duplicate_distance",
         type=float,
         default=0.5,
-        help="min distance in meter for duplicate image detection"
+        help="Min distance in meter for duplicate image detection"
     )
     parser.add_argument(
         "-j",
@@ -42,14 +42,14 @@ def arg_parse():
     parser.add_argument(
         "-r",
         "--recursive",
-        help="search images in subdirectory",
+        help="Search images in subdirectory",
         action="store_true",
         default=False,
     )
     parser.add_argument(
         "-t",
         "--max_turn_angle",
-        help="check if two subsequent images have a too large direction angle\n the result will be send to Josm as a session",
+        help="check if two subsequent images have a too large direction angle. The result will be send to Josm as a session, with some previous and following images.",
         default=25,
         type=float,
     )
@@ -57,7 +57,7 @@ def arg_parse():
         "-v",
         "--version",
         action="version",
-        version="release 0.1"
+        version="release 0.2"
     )
     args = parser.parse_args()
     print(args)
