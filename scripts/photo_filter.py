@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import base64
 import os, sys, datetime
 import argparse
-#from datetime import datetime
 from math import sin, cos, sqrt, atan2, asin, radians
-from dateutil.tz import tzlocal
 import time
 from lib_temp.exif_read import ExifRead as EXIF
 import json
@@ -290,7 +287,7 @@ def main(path):
     trailing_pics = 10
     if args.json_file is not None:
         area_dict = import_geojson(args.json_file, "name")
-        print("{} polygons loaded".format(len(area_dict)))
+        print("{} polygons loaded : {}".format(len(area_dict), list(area_dict.keys())))
         previous_area = None
         geofence_list = []
     #print(area_dict)
