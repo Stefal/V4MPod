@@ -1327,7 +1327,7 @@ def open_session_in_josm(session_file_path, remote_port=8111):
     try:
         r = urllib.request.urlopen("http://127.0.0.1:" + str(remote_port) + "/open_file?filename=" + session_file_path)
         answer = r.read()
-        print("Success!") if "OK" in answer else print("Error!")
+        print("Success!") if "OK" in answer.decode() else print("Error!")
         r.close()
     except Exception as e:
         print("Error! Can't send the session to Josm", e)
