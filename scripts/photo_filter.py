@@ -21,7 +21,8 @@ Picture_infos = namedtuple('Picture_infos',
 
 def arg_parse():
     parser = argparse.ArgumentParser(
-        description="Search for distance based duplicate images and move them in a 'duplicate' subfolder. Search for image in geofence zones and move them in a 'geofence' subfolder"
+        description="Search for distance based duplicate images and move them in a 'duplicate' subfolder.\nSearch for image in geofence zones and move them in a 'geofence' subfolder\nSearch for images with a too large angle between them.",
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "paths",
@@ -33,7 +34,7 @@ def arg_parse():
         "--duplicate_distance",
         type=float,
         default=0.5,
-        help="min distance in meter for duplicate image detection"
+        help="Min distance in meter for duplicate image detection.\nDefault: %(default)s meter(s)"
     )
     parser.add_argument(
         "-j",
@@ -52,9 +53,16 @@ def arg_parse():
     parser.add_argument(
         "-t",
         "--max_turn_angle",
-        help="check if two subsequent images have a too large direction angle\n the result will be send to Josm as a session",
+        help="Check if two subsequent images have a too large direction angle.\nThe result will be send to Josm as an image layer.\nDefault: %(default)s°",
         default=25,
         type=float,
+    )
+    parser.add_argument(
+        "-e",
+        "--enclosing_images",
+        help="Set how many images will be added around a too tight angle. These images will be included in the Josm session.\n Exemple with 10: 2 images before and 8 images after.\nDefault: %(default)s images",
+        default=10,
+        type=int,
     )
     parser.add_argument(
         "-v",
@@ -271,8 +279,17 @@ def open_session_in_josm(session_file_path, remote_port=8111):
     """Send the session file to Josm. "Remote control" and "open local files" must be enable in the Josm settings
      :param session_file_path: the session file path (.jos)
      :param remote_port: the port to talk to josm. Default is 8111"""
-    import urllib.request, urllib.error, urllib.parse
-    #TODO utiliser 127.0.0.1:8111/version pour vérifier si josm est en route et le remote actif.
+    import urllib.request, urllib.error, urllib.parse, json
+    try:
+        r = urllib.request.urlopen("http://127.0.0.1:8111/version")
+        answer = r.read()
+        if not "JOSM" in json.loads(answer.decode()).get("application"):
+            print("Error! Communication problem with Josm")
+            return False
+    except urllib.request.URLError as e:
+        print("Error! Josm isn't running")
+        return False
+
     #TODO gérer les cas ou le chemin de fichier comporte des caractères accentués. L'idéal serait un passage
     # a python 3, mais je doute que les dépendances le gère correctement.
     session_file_path = urllib.parse.quote(session_file_path)
@@ -286,6 +303,9 @@ def open_session_in_josm(session_file_path, remote_port=8111):
         r.close()
     except Exception as e:
         print("Error! Can't send the session to Josm: ", e)
+        return False
+    return True
+
 def main(path):
     trailing_pics = 10
     if args.json_file is not None:
@@ -308,10 +328,12 @@ def main(path):
         current_lat = image.Latitude
         current_long = image.Longitude
         current_direction = image.ImgDirection
+        #Check distance between images
         img_distance = ComputeDist(prev_lat, prev_long, current_lat, current_long)
         if img_distance < args.duplicate_distance:
             duplicate_list.append(image)
             continue
+        #Check geofence
         prev_lat = current_lat
         prev_long = current_long
         if args.json_file is not None:
@@ -320,6 +342,7 @@ def main(path):
                 previous_area = area
                 geofence_list.append(image)
                 continue
+        #Check angle
         if abs((current_direction - prev_direction + 180) % 360 - 180) > args.max_turn_angle:
             try:
                 for idx in range(trailing_pics):
