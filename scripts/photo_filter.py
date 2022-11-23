@@ -314,7 +314,10 @@ def main(path):
         previous_area = None
         geofence_list = []
     #print(area_dict)
-    images_list=list_images(path.path)
+    images_list=list_images(path)
+    print("{} images found".format(len(images_list)))
+    if len(images_list) == 0:
+        return
     #print("type path is: ", type(path))
     prev_lat = 0
     prev_long = 0
@@ -323,6 +326,7 @@ def main(path):
     #pp.pprint(images_list)
     starttime = images_list[0].DateTimeOriginal
     duplicate_list = []
+    geofence_list = []
     reverse_list = []
     for i, image in enumerate(images_list):
         current_lat = image.Latitude
@@ -356,27 +360,26 @@ def main(path):
     print("{} images inside geofence zone".format(len(geofence_list)))
     if len(duplicate_list)>0:
         os.makedirs(os.path.join(path, "duplicate"), exist_ok = True)
-        move_to_subfolder(duplicate_list, os.path.join(path.path, "duplicate"))
+        move_to_subfolder(duplicate_list, os.path.join(path, "duplicate"))
     if len(geofence_list)>0:
         os.makedirs(os.path.join(path, "geofence"), exist_ok = True)
-        move_to_subfolder(geofence_list, os.path.join(path.path, "geofence"))
+        move_to_subfolder(geofence_list, os.path.join(path, "geofence"))
     if len(reverse_list)>0:
         #print(reverse_list)
-        write_josm_session([reverse_list], os.path.join(path.path, "session.jos"), [path.name + " | reverse"])
-        open_session_in_josm(os.path.abspath(os.path.join(path.path, "session.jos")))
+        write_josm_session([reverse_list], os.path.join(path, "session.jos"), [path + " | reverse"])
+        open_session_in_josm(os.path.abspath(os.path.join(path, "session.jos")))
         
     
                   
 if __name__ == '__main__':
     args=arg_parse()
     for _path in args.paths:
+        print("Path is: ", _path)
+        main(_path)
         if args.recursive:
             for sub_path in [f for f in os.scandir(_path) if f.is_dir()]:
                 print("Path is: ", sub_path.path)
-                main(sub_path)
-        elif not args.recursive:
-            print("Path is: ", sub_path.path)
-            main(_path)
+                main(sub_path.path)
 
     print("End of Script")
 	
