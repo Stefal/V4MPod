@@ -141,7 +141,7 @@ def get_drivelist():
 	- Gnu/Linux: /proc/mounts files content, filtered (only dev/sdx lines)
 	"""
     if 'win32' in sys.platform:
-        drivelist = subprocess.Popen('wmic logicaldisk get name,volumename, drivetype, volumeserialnumber /format:CSV',
+        drivelist = subprocess.Popen('wmic logicaldisk get name,volumename, drivetype, volumeserialnumber /Format:"%WINDIR%\System32\wbem\en-us\csv"',
                                      shell=True, stdout=subprocess.PIPE)
         drivelistout, err = drivelist.communicate()
         drivelist = drivelistout.decode().replace("\r", "").split("\n")
