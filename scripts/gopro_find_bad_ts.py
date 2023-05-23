@@ -187,22 +187,23 @@ def fix_err_timestamp(file_list):
         write_metadata(newlist)
         print("Fixed files count: ", len(newlist))
     else:
-        print("these {} files could be corrected but you selected --nowrite".format(len(newlist)))
         print(newlist)
+        print("these {} files could be corrected but you selected --nowrite".format(len(newlist)))
+        
     return newlist
 
 def main(path):
     images_list=list_images(path)
     print("le chemin est ", path)
     pp = pprint.PrettyPrinter()
-    pp.pprint(images_list)
+    #pp.pprint(images_list)
     
     movelist = []
     #print("debug : ", os.path.basename(images_list[0][0]))
     previous_index = int(os.path.basename(images_list[0][0])[-11:-4])
     for image in images_list:
         current_index = int(os.path.basename(image[0])[-11:-4])
-        print("previous: {} - current {}".format(previous_index, current_index))
+        #print("previous: {} - current {}".format(previous_index, current_index))
         if current_index > previous_index + 3:
             move_img = True
         elif current_index < previous_index + 1:
@@ -212,10 +213,9 @@ def main(path):
             movelist.append(image)
 
         previous_index = current_index
-    #pp.pprint(movelist)
     fix_err_timestamp(movelist)
 
-    pp.pprint(movelist)
+    #pp.pprint(movelist)
                       
 
 if __name__ == '__main__':

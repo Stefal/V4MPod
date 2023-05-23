@@ -172,13 +172,21 @@ def move_to_subfolder(file_list, destination_path):
         os.replace(file[0], os.path.join(destination_path, os.path.basename(file[0])))
 
 def main(path):
-    images_list=list_images(path)
-    print("le chemin est ", path)
+    images_list = list_images(path)
+    metadata = EXIF(images_list[0][0])
+    cam_model= metadata.extract_model()
+    print("Cam model: ", cam_model)
+    print("directory is: ", path)
     #pp = pprint.PrettyPrinter()
     #pp.pprint(images_list)
     starttime = images_list[0][1]
-    rtc_fix = 0.007
+    if "HERO9" in cam_model:
+        rtc_fix = 0.007
+    elif "HERO11" in cam_model:
+        rtc_fix = 0.0039
     newlist = []
+    #print("RTC fix: ", rtc_fix)
+    #sys.exit()
     for image in images_list:
         #fix wrong subsecond
         #Not needed anymore since the latest GoPro Hero Firmware
