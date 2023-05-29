@@ -1170,7 +1170,7 @@ def geotag_from_gpx(piclist, gpx_file, offset_time=0, offset_bearing=0, offset_d
         # metadata = ExifEdit(filename)
         #import pdb; pdb.set_trace()
         t = pic.New_DateTimeOriginal - datetime.timedelta(seconds=offset_time)
-        #t = t.replace(tzinfo=tzlocal()) # <-- TEST pour cause de datetime aware vs naive
+        t = t.replace(tzinfo=tzlocal()) # <-- TEST pour cause de datetime aware vs naive
         
         try:
             lat, lon, bearing, elevation = interpolate_lat_lon(gpx, t)
