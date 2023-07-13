@@ -56,7 +56,9 @@ def list_images(directory):
     '''
 
     file_list = [os.path.join(os.path.abspath(directory), file) for file in os.listdir(directory) if file.lower().endswith(".jpg")]
-
+    if len(file_list) == 0:
+        print("No image found!")
+        return
     files = []
     # get DateTimeOriginal data from the images and sort the list by timestamp
     for filepath in file_list:

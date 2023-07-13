@@ -200,7 +200,11 @@ def main(path):
     
     movelist = []
     #print("debug : ", os.path.basename(images_list[0][0]))
-    previous_index = int(os.path.basename(images_list[0][0])[-11:-4])
+    try:
+        previous_index = int(os.path.basename(images_list[0][0])[-11:-4])
+    except IndexError:
+        print("Can't get previous index. Exiting...")
+        return
     for image in images_list:
         current_index = int(os.path.basename(image[0])[-11:-4])
         #print("previous: {} - current {}".format(previous_index, current_index))
