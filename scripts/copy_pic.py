@@ -141,10 +141,10 @@ def get_drivelist():
 	- Gnu/Linux: /proc/mounts files content, filtered (only dev/sdx lines)
 	"""
     if 'win32' in sys.platform:
-        drivelist = subprocess.Popen('wmic logicaldisk get name,volumename, drivetype, volumeserialnumber /Format:"%WINDIR%\System32\wbem\en-us\csv"',
+        wmic_out = subprocess.Popen('wmic logicaldisk get name,volumename, drivetype, volumeserialnumber /Format:"%WINDIR%\System32\wbem\en-us\csv"',
                                      shell=True, stdout=subprocess.PIPE)
-        drivelistout, err = drivelist.communicate()
-        drivelist = drivelistout.decode().replace("\r", "").split("\n")
+        drivelistout, err = wmic_out.communicate()
+        drivelist = drivelistout.decode(errors="ignore").replace("\r", "").split("\n")
         drivelist = [drive.split(",") for drive in drivelist if drive != ""]
         drive_type_index = drivelist[0].index("DriveType")
         drive_letter_index = drivelist[0].index("Name")
