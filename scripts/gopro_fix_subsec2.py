@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# VERSION SIMPLE POUR LES YI 4K
-# JE PREND LE TIMESTAMP DE LA PREMIERE PHOTO, J'AJOUTE 0.5s A LA SUIVANTE ETC...
+# l'horloge interne est un peu trop lente, il faut corriger le timestamp de 0.007%
 
 import os, sys, datetime
+import pprint
 #from datetime import datetime
 from dateutil.tz import tzlocal
 from lib.exif_read import ExifRead as EXIF
@@ -31,8 +31,8 @@ def list_images(directory):
         #metadata.read()
         try:
             t = metadata.extract_capture_time()
-            #print t
-            #print type(t)
+            #print(t)
+            #print(type(t))
             #s = metadata["Exif.Photo.SubSecTimeOriginal"].value
             files.append((filepath, t))
         except KeyError as e:
@@ -98,7 +98,7 @@ def write_metadata(image_list):
         #metadata["Exif.Photo.DateTimeOriginal"] = image[1]
         metadata.add_date_time_original(image[1])
         #metadata["Exif.Photo.SubSecTimeOriginal"] = image[2]
-        metadata.add_subsectimeoriginal(image[2])
+        #metadata.add_subsectimeoriginal(image[2])
         
         metadata.write()
         #print('Writing new timestamp to ', image[0])
@@ -146,38 +146,31 @@ def move_to_subfolder(file_list, destination_path):
 def main(path):
     images_list=list_images(path)
     print("le chemin est ", path)
-
-    #on créé une nouvelle liste avec des tuples comprenant le chemin des images, leurs datetimeoriginal, et la différence de temps avec la précédente
+    #pp = pprint.PrettyPrinter()
+    #pp.pprint(images_list)
+    starttime = images_list[0][1]
+    rtc_fix = 0.007
     newlist = []
-    for i,pic in enumerate(images_list):
-        newlist.append((images_list[i][0], images_list[i][1], int((images_list[i][1]-images_list[i-1][1]).total_seconds())))
-    
-    print("Nombre d'images : ", len(newlist))
-    #Calcul du délai moyen
-    print("Le delai moyen est :", ((newlist[len(newlist)-1][1]-newlist[0][1]).total_seconds()+1)/len(newlist))
+    for image in images_list:
+        #fix wrong subsecond
+        #Not needed anymore since the latest GoPro Hero Firmware
+        #img_timestamp = image[1].replace(microsecond=image[1].microsecond*10)
+        img_timestamp = image[1]
+        #fix rtc drift
+        img_timestamp = img_timestamp - ((img_timestamp - starttime) * rtc_fix/100)
+        print("ori : {} - new = {}".format(image[1], img_timestamp))
+        newlist.append((image[0], img_timestamp))
 
-    #print_list(newlist)
-    
-    #Création du générateur
-    group_number = 0
-    for group in generate_group(newlist):
-        #import pdb; pdb.set_trace()
-        #gap_list=[(0,group[0][0],group[0][1])]
-        
-        print("NOUVEAU GROUPE")
-        interpolate_fixed_timestamp(group)
-        group_path = os.path.join(path, "group_" + str(group_number))
-        try:
-            os.mkdir(group_path)
-        except FileExistsError as e:
-            print("Directory already present")
+    #for image in images_list:
+        #fix wrong gopro subsecond value
+        #image = (image[0], image[1].replace(microsecond=image[1].microsecond*10))
+        #image = (image[0], "prout")
 
-        move_to_subfolder(group, group_path)
-        group_number += 1
-        #print_list(group)
-        
-    #print_list(newlist)
-              
+        #image[1] = image[1].replace(year=1976)
+    
+    #pp.pprint(newlist)
+    write_metadata(newlist)
+                  
     print("End of Script")
 
 if __name__ == '__main__':

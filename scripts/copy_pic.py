@@ -52,6 +52,7 @@ import os, subprocess, sys, datetime, shutil, time, argparse
 from lib.exif_read import ExifRead as EXIF
 from threading import Thread
 from queue import Queue
+from concurrent.futures import ThreadPoolExecutor
 
 
 def arg_parse():
@@ -61,7 +62,7 @@ def arg_parse():
     parser.add_argument("destination", nargs="?", help="Path destination for the pictures. Without this parameter, "
                                                        "the script will use the current directory as the destination", default=os.getcwd())
     parser.add_argument("--version", action="version", version="%(prog)s 0.02")
-    parser.add_argument("-s", "--source", help="Name of the volume's sources", default="avant, droite, arriere, gauche")
+    parser.add_argument("-s", "--source", help="Name of the volume's sources", default="avant, droite, arriere, gauche, pla_droite, pla_gauche")
     parser.add_argument("-c", "--cut", help="Min time between two pictures to create a new group (in seconds)",
                         default=10, type=int)
     parser.add_argument("-a", "--allgroups", help="Copy all groups of pictures without asking.", action="store_true")
@@ -141,10 +142,11 @@ def get_drivelist():
 	- Gnu/Linux: /proc/mounts files content, filtered (only dev/sdx lines)
 	"""
     if 'win32' in sys.platform:
-        drivelist = subprocess.Popen('wmic logicaldisk get name,volumename, drivetype, volumeserialnumber /format:CSV',
+
+        wmic_out = subprocess.Popen('wmic logicaldisk get name,volumename, drivetype, volumeserialnumber /Format:"%WINDIR%\System32\wbem\en-us\csv"',
                                      shell=True, stdout=subprocess.PIPE)
-        drivelistout, err = drivelist.communicate()
-        drivelist = drivelistout.decode().replace("\r", "").split("\n")
+        drivelistout, err = wmic_out.communicate()
+        drivelist = drivelistout.decode(errors="ignore").replace("\r", "").split("\n")
         drivelist = [drive.split(",") for drive in drivelist if drive != ""]
         drive_type_index = drivelist[0].index("DriveType")
         drive_letter_index = drivelist[0].index("Name")
@@ -337,9 +339,26 @@ if __name__ == '__main__':
 
     piclist = []
     print("Searching for pictures...")
-    for drive in drivelist:
-        drivepath, volume = drive
-        piclist.extend(list_jpg(drivepath + "/DCIM/", volume))
+    
+   # with ThreadPoolExecutor(max_workers = workers_cnt) as executor:
+   #     future_lst = []
+   #     for cam in MyCams.cams_list:
+   #         future_itm = executor.submit(web_cam_info, cam)
+   #         future_lst.append(future_itm)
+   #     for future in future_lst:
+   #         result = future.result()
+   #         cams_status.append(result)
+    
+    workers_cnt = len(drivelist)
+    with ThreadPoolExecutor(max_workers = workers_cnt) as executor:
+        future_lst = []
+        for drive in drivelist:
+            drivepath, volume = drive
+            future_itm = executor.submit(list_jpg, drivepath + "/DCIM/", volume)
+            future_lst.append(future_itm)
+        for future in future_lst:
+            result = future.result()
+            piclist.extend(result)
 
     piclist.sort(key=lambda timestamp: timestamp[2])
     groups = []

@@ -2,9 +2,9 @@
 
 import os, sys
 
-from lib.exif import EXIF
-from lib.exifedit import ExifEdit
-from LatLon import LatLon,string2latlon,Latitude,Longitude
+from lib.exif_read import ExifRead as EXIF
+from lib.exif_write import ExifEdit
+from LatLon3.lat_lon import LatLon,string2latlon,Latitude,Longitude
 
 
 '''
@@ -77,9 +77,9 @@ def list_images(directory):
             geo = metadata.extract_geo()
             direction = metadata.extract_direction()
             files.append((filepath, geo["latitude"], geo["longitude"],  direction))
-        except KeyError, e:
+        except KeyError as e:
             # if any of the required tags are not set the image is not added to the list
-            print("Skipping {0}: {1}".format(filename, e))
+            print("Skipping {0}: {1}".format(filepath, e))
 
     files.sort()
     return files
@@ -116,7 +116,7 @@ def write_exif(filename, coordinates):
         
         metadata.write()
         print("Added geodata to: {0}".format(filename))
-    except ValueError, e:
+    except ValueError as e:
         print("Skipping {0}: {1}".format(filename, e))
 
 
@@ -133,14 +133,26 @@ if __name__ == '__main__':
 
     # list of file tuples sorted by timestamp
     imageList = list_images(path)
-
+    skipped_img = []
     for Img in imageList :
-        original_coord = LatLon(Latitude(Img[1]), Longitude(Img[2]))
-        new_coord = original_coord.offset(Img[3], (offset/1000))
-        tuple_coord=new_coord.to_string('d%,%m%,%S%,%H')
-        list_coord = ",".join(tuple_coord)
-        list_coord = list_coord.split(",")
-        list_coord.append(Img[3])
-        #import pdb; pdb.set_trace()
-        write_exif(Img[0],new_coord)
+        
+        if Img[1] != None and Img[2] != None and Img[3] != None:
+            original_coord = LatLon(Latitude(Img[1]), Longitude(Img[2]))
+            #print("origine : ", original_coord)
+            #print("heading : ", Img[3])
+            new_coord = original_coord.offset(Img[3], (offset/1000))
+            tuple_coord=new_coord.to_string('d%,%m%,%S%,%H')
+            list_coord = ",".join(tuple_coord)
+            list_coord = list_coord.split(",")
+            list_coord.append(Img[3])
+            #import pdb; pdb.set_trace()
+            write_exif(Img[0],new_coord)
+        else:
+            print("Skipping ", Img[0])
+            skipped_img.append(Img[0])
+    if len(skipped_img) > 0:
+        print("Skipped images : ")
+        for img in skipped_img:
+            print(img)
+
     print("End of Script")

@@ -1,0 +1,6 @@
+{
+    "board": "arduino:avr:uno",
+    "port": "COM21",
+    "programmer": "arduino:avrispmkii",
+    "sketch": "arduino\\Yi_ctrl\\Yi_ctrl.ino"
+}

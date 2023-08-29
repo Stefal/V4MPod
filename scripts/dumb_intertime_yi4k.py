@@ -158,25 +158,9 @@ def main(path):
 
     #print_list(newlist)
     
-    #Création du générateur
-    group_number = 0
-    for group in generate_group(newlist):
-        #import pdb; pdb.set_trace()
-        #gap_list=[(0,group[0][0],group[0][1])]
-        
-        print("NOUVEAU GROUPE")
-        interpolate_fixed_timestamp(group)
-        group_path = os.path.join(path, "group_" + str(group_number))
-        try:
-            os.mkdir(group_path)
-        except FileExistsError as e:
-            print("Directory already present")
-
-        move_to_subfolder(group, group_path)
-        group_number += 1
-        #print_list(group)
-        
-    #print_list(newlist)
+    
+    interpolate_fixed_timestamp(images_list)
+    
               
     print("End of Script")
 

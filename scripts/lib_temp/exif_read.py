@@ -340,7 +340,15 @@ class ExifRead:
         ]
         sub_sec, _ = self._extract_alternative_fields(
             fields, default='', field_type=str)
-        return sub_sec.strip()
+        sub_sec_corrected = ""
+        for char in sub_sec:
+            if char == " ":
+                sub_sec_corrected += "0"
+            else:
+                sub_sec_corrected += char
+        if sub_sec != sub_sec_corrected:
+            print("subsec = {} -> {}".format(ascii(sub_sec), sub_sec_corrected))
+        return sub_sec_corrected.strip()
 
     def fields_exist(self, fields):
         '''
