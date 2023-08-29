@@ -200,6 +200,27 @@ def listgroup():
         print("i = ", i, "pic = ", piclist[i][1])
         print("fin de groupe")
 
+def make_groups(piclist, cutoff):
+    """ make groups depending on cut time"""
+
+    groups = []
+    groups.append(piclist[0][1])
+    ziplist = zip(piclist, piclist[1:])
+    # print 'cutoff vaut', cutoff
+    print("Computing groups...")
+
+    for pic_couple in ziplist:
+        id1, path1, t1 = pic_couple[0]
+        id2, path2, t2 = pic_couple[1]
+        gap = (t2 - t1)
+        # print gap.total_seconds()
+        if gap.total_seconds() >= cutoff:
+            groups.append(path2)
+
+    for i, group in enumerate(groups):
+        groups[i] = find_in_sublist(piclist, group)
+        print("Group {0} start : {1}".format(i + 1, piclist[groups[i]][2].strftime("%Y-%m-%d_%HH%Mmn%Ss")))
+    return groups
 
 def make_pics_groups(piclist, groups):
     """This compare the piclist and the group to generate the group path, and
@@ -361,23 +382,7 @@ if __name__ == '__main__':
             piclist.extend(result)
 
     piclist.sort(key=lambda timestamp: timestamp[2])
-    groups = []
-    groups.append(piclist[0][1])
-    ziplist = zip(piclist, piclist[1:])
-    # print 'cutoff vaut', cutoff
-    print("Computing groups...")
-
-    for pic_couple in ziplist:
-        id1, path1, t1 = pic_couple[0]
-        id2, path2, t2 = pic_couple[1]
-        gap = (t2 - t1)
-        # print gap.total_seconds()
-        if gap.total_seconds() >= cutoff:
-            groups.append(path2)
-
-    for i, group in enumerate(groups):
-        groups[i] = find_in_sublist(piclist, group)
-        print("Group {0} start : {1}".format(i + 1, piclist[groups[i]][2].strftime("%Y-%m-%d_%HH%Mmn%Ss")))
+    groups = make_groups(piclist, cutoff)
 
     input_validity = False
     while input_validity == False:
