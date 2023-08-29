@@ -1,0 +1,1 @@
+Cette copie du dossier lib n'est là que pour corriger le bug des timestamps erronés des gopro lorsque la valeur est entre 0 et 100 millisecondes
