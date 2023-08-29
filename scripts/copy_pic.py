@@ -52,6 +52,7 @@ import os, subprocess, sys, datetime, shutil, time, argparse
 from lib.exif_read import ExifRead as EXIF
 from threading import Thread
 from queue import Queue
+from concurrent.futures import ThreadPoolExecutor
 
 
 def arg_parse():
@@ -337,9 +338,26 @@ if __name__ == '__main__':
 
     piclist = []
     print("Searching for pictures...")
-    for drive in drivelist:
-        drivepath, volume = drive
-        piclist.extend(list_jpg(drivepath + "/DCIM/", volume))
+    
+   # with ThreadPoolExecutor(max_workers = workers_cnt) as executor:
+   #     future_lst = []
+   #     for cam in MyCams.cams_list:
+   #         future_itm = executor.submit(web_cam_info, cam)
+   #         future_lst.append(future_itm)
+   #     for future in future_lst:
+   #         result = future.result()
+   #         cams_status.append(result)
+    
+    workers_cnt = len(drivelist)
+    with ThreadPoolExecutor(max_workers = workers_cnt) as executor:
+        future_lst = []
+        for drive in drivelist:
+            drivepath, volume = drive
+            future_itm = executor.submit(list_jpg, drivepath + "/DCIM/", volume)
+            future_lst.append(future_itm)
+        for future in future_lst:
+            result = future.result()
+            piclist.extend(result)
 
     piclist.sort(key=lambda timestamp: timestamp[2])
     groups = []
