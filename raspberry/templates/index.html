@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+
+    <table class="table table-striped table-hover table-condensed">
+        <tr>
+          <th>Session_name:
+              </th>
+              <th>
+                  {{ data.session_name }}
+              </th>
+        </tr>
+        <tr>
+            <th>Pic count:</th>
+            <th>{{ data.pic_count }}</th>
+        </tr>
+        <tr>
+            <th>Errors:</th>
+            <th>{{ data.errors }}</th>
+        </tr>
+    </table>
+
+<div class="text-center" style="padding-top:1em; padding-bottom:1em">
+    <a href="{{ url_for('web_take_pic') }}" class="btn btn-primary btn-lg" style="color:whitesmoke">
+    Take Pic
+    </a>
+</div>
+<div class="text-center" style="padding-top:1em; padding-bottom:1em">
+    <a href="{{ url_for('web_take_pic', option='init') }}" class="btn btn-primary" style="color:whitesmoke">
+    Take initializing Pic
+</a>
+<div class="text-center" style="padding-top:1em; padding-bottom:1em">
+    <a href="{{ url_for('web_pwr_up') }}" class="btn btn-primary" style="color:whitesmoke">
+    Power up all cams <span class="glyphicon glyphicon-off" style="color:white ; font-size:1.5em"></span>
+</a>
+</div>
+    <a href="{{ url_for('web_command', cmd='reboot') }}" class="btn btn-warning btn-block" style="color:whitesmoke">
+    Restart
+     </a>
+    <a href="{{ url_for('web_command', cmd='exit_prog') }}" class="btn btn-danger btn-block" style="color:whitesmoke">
+    Exit
+    </a>
+    <a href="{{ url_for('web_command', cmd='power_down') }}" class="btn btn-danger btn-block" style="color:whitesmoke">
+    Shutdown
+    </a>
+</div>
+{% endblock %}

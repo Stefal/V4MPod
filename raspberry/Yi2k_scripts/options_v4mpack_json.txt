@@ -1,0 +1,72 @@
+#{"msg_id":2, "type":"osd_enable", "param":"on"}
+{"msg_id":2, "type":"osd_enable", "param":"off"}
+
+
+#POSE PROBLEME... BAH NON... SI AVEC LA Z22
+#{"msg_id":2, "type":"system_mode", "param":"capture"}
+#{"msg_id":2, "type":"system_mode", "param":"record"}
+
+{"msg_id":2, "type":"system_default_mode", "param":"capture"}
+#{"msg_id":2, "type":"system_default_mode", "param":"record"}
+
+{"msg_id":2, "type":"auto_power_off", "param":"off"}
+#{"msg_id":2, "type":"auto_power_off", "param":"3 minutes"}
+#{"msg_id":2, "type":"auto_power_off", "param":"5 minutes"}
+#{"msg_id":2, "type":"auto_power_off", "param":"10 minutes"}
+
+#{"msg_id":2, "type":"warp_enable", "param":"on"}
+{"msg_id":2, "type":"warp_enable", "param":"off"}
+
+{"msg_id":2, "type":"auto_low_light", "param":"on"}
+#{"msg_id":2, "type":"auto_low_light", "param":"off"}
+
+#{"msg_id":2, "type":"video_output_dev_type", "param":"hdmi"}
+#{"msg_id":2, "type":"video_output_dev_type", "param":"tv"}
+{"msg_id":2, "type":"video_output_dev_type", "param":"off"}
+
+{"msg_id":2, "type":"meter_mode", "param":"center"}
+#{"msg_id":2, "type":"meter_mode", "param":"average"}
+#{"msg_id":2, "type":"meter_mode", "param":"spot"}
+
+{"msg_id":2, "type":"led_mode", "param":"all enable"}
+#{"msg_id":2, "type":"led_mode", "param":"all disable"}
+#{"msg_id":2, "type":"led_mode", "param":"status enable"}
+
+{"msg_id":2, "type":"capture_default_mode", "param":"precise quality"}
+#{"msg_id":2, "type":"capture_default_mode", "param":"precise quality cont."}
+#{"msg_id":2, "type":"capture_default_mode", "param":"burst quality"}
+#{"msg_id":2, "type":"capture_default_mode", "param":"precise self quality"}
+
+#{"msg_id":2, "type":"preview_status", "param":"on"}
+{"msg_id":2, "type":"preview_status", "param":"off"}
+
+{"msg_id":2, "type":"capture_mode", "param":"precise quality"}
+#{"msg_id":2, "type":"capture_mode", "param":"precise quality cont."}
+#{"msg_id":2, "type":"capture_mode", "param":"burst quality"}
+#{"msg_id":2, "type":"capture_mode", "param":"precise self quality"}
+
+{"msg_id":2, "type":"photo_size", "param":"16M (4608x3456 4:3)"}
+#{"msg_id":2, "type":"photo_size", "param":"13M (4128x3096 4:3)"}
+#{"msg_id":2, "type":"photo_size", "param":"8M (3264x2448 4:3)"}
+#{"msg_id":2, "type":"photo_size", "param":"5M (2560x1920 4:3)"}
+
+{"msg_id":2, "type":"photo_stamp", "param":"off"}
+#{"msg_id":2, "type":"photo_stamp", "param":"date"}
+#{"msg_id":2, "type":"photo_stamp", "param":"time"}
+#{"msg_id":2, "type":"photo_stamp", "param":"date\/time"}
+
+{"msg_id":2, "type":"photo_quality", "param":"S.Fine"}
+#{"msg_id":2, "type":"photo_quality", "param":"Fine"}
+#{"msg_id":2, "type":"photo_quality", "param":"Normal"}
+
+#{"msg_id":2, "type":"buzzer_volume", "param":"high"}
+#{"msg_id":2, "type":"buzzer_volume", "param":"low"}
+{"msg_id":2, "type":"buzzer_volume", "param":"mute"}
+
+{"msg_id":2, "type":"start_wifi_while_booted", "param":"on"}
+#{"msg_id":2, "type":"start_wifi_while_booted", "param":"off"}
+
+#line to beep the Yi
+{"msg_id":2, "type":"buzzer_ring", "param":"on"}
+{"msg_id":2, "type":"buzzer_ring", "param":"off"}
+

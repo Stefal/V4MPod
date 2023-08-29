@@ -1086,7 +1086,7 @@ def compute_delta3(loglist1, piclist2):
             delta.append((loglist1[i].log_timestamp - piclist2[i].DateTimeOriginal).total_seconds())
         except:
             pass
-            # print("Impossible de calculer le delta")
+            print("Impossible de calculer le delta")
     # print("somme des deltas : ", sum(delta))
     return delta
 
@@ -1168,7 +1168,7 @@ def geotag_from_gpx(piclist, gpx_file, offset_time=0, offset_bearing=0, offset_d
     for i, pic in enumerate(piclist):
         # add_exif_using_timestamp(filepath, filetime, gpx, time_offset, bearing_offset)
         # metadata = ExifEdit(filename)
-        #import ipdb; ipdb.set_trace()
+        #import pdb; pdb.set_trace()
         t = pic.New_DateTimeOriginal - datetime.timedelta(seconds=offset_time)
         t = t.replace(tzinfo=tzlocal()) # <-- TEST pour cause de datetime aware vs naive
         
@@ -1327,7 +1327,7 @@ def open_session_in_josm(session_file_path, remote_port=8111):
     try:
         r = urllib.request.urlopen("http://127.0.0.1:" + str(remote_port) + "/open_file?filename=" + session_file_path)
         answer = r.read()
-        print("Success!") if "OK" in answer else print("Error!")
+        print("Success!") if "OK" in answer.decode() else print("Error!")
         r.close()
     except Exception as e:
         print("Error! Can't send the session to Josm", e)
@@ -1378,7 +1378,7 @@ def config_parse(profile_name):
 
     import configparser
     config = configparser.ConfigParser()
-    config.read(os.path.dirname(sys.argv[0]) + "\\profile.cfg")
+    config.read(os.path.join(os.path.dirname(sys.argv[0]), "profile.cfg"))
 
     folder_string = config.get(profile_name, "folder_names")
     folder_string = [i.strip() for i in folder_string.split(",")]
