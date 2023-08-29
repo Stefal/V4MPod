@@ -379,7 +379,7 @@ if __name__ == '__main__':
     while input_validity == False:
         if not allgroups:
             user_input = input(
-                "\nEnter the group' number you want to copy\nOr enter the group range (e.g. 2-4 to copy the groups 2,3 and 4),\nOr press enter to copy all groups : ").split(
+                "\nEnter the group' number you want to copy\nOr enter the group range (e.g. 2-4 to copy the groups 2,3 and 4),\nOr press enter to copy all groups,\nOr enter c+value to change the cut value (e.g. c600 for 600 seconds) : ").split(
                 "-")
         else:
             user_input = ['']
@@ -389,6 +389,10 @@ if __name__ == '__main__':
             user_input.append(len(groups))
         if len(user_input) == 1:
             user_input.append(user_input[0])
+        if user_input[0].startswith('c'):
+            print("appel cutoff")
+            cutoff = int(user_input[0][1:])
+            groups = make_groups(piclist, cutoff)
         input_validity = check_user_choice(user_input)
 
     if len(groups) == int(user_input[1]):
