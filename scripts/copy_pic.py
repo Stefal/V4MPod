@@ -361,15 +361,6 @@ if __name__ == '__main__':
     piclist = []
     print("Searching for pictures...")
     
-   # with ThreadPoolExecutor(max_workers = workers_cnt) as executor:
-   #     future_lst = []
-   #     for cam in MyCams.cams_list:
-   #         future_itm = executor.submit(web_cam_info, cam)
-   #         future_lst.append(future_itm)
-   #     for future in future_lst:
-   #         result = future.result()
-   #         cams_status.append(result)
-    
     workers_cnt = len(drivelist)
     with ThreadPoolExecutor(max_workers = workers_cnt) as executor:
         future_lst = []
