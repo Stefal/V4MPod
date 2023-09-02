@@ -135,6 +135,15 @@ def get_drive_path(volumename, alldrivelist, drive_type=None):
             if drive.lower() == volumename.lower():
                 return "/Volumes/" + drive
 
+def get_mtpdrivelist():
+    """ Return a list of mtp drive path """
+
+    if 'linux' in sys.platform:
+        mtp_path = '/run/user/1000/gvfs/'
+        device_list = os.listdir(mtp_path)
+        device_list = [os.path.join(mtp_path, device) for device in device_list]
+        drivelist = [os.path.join(device, os.listdir(device)[0]) for device in device_list if device != None]
+        return drivelist
 
 def get_drivelist():
     """Return a list of drives connected to the computer
