@@ -161,7 +161,6 @@ def find_volume_file_name(filename, drive):
             if filename.lower() == file.lower():
                 return drive
     except FileNotFoundError:
-        print("exception!! ")
         pass
     return None
 
