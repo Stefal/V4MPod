@@ -127,7 +127,8 @@ def get_drive_path(volumename, alldrivelist, drive_type=None):
             if drive[3].lower() == volumename.lower():
                 return drive[2]
             # search file in drive
-            return find_volume_file_name(volumename, drive[2])
+            if find_volume_file_name(volumename, drive[2]):
+                return drive[2]
     elif 'linux' in sys.platform:
         for drive in alldrivelist:
             print("drive: ", drive)
@@ -193,8 +194,6 @@ def get_drivelist():
         for drive in drivelist:  # convert drive type to integer
             drive[drive_type_index] = int(drive[drive_type_index])
             # drivefiltered = [drive for drive in drivelist if drive[drive_type_index] == str(2)] #We keep only the drives with type 2
-
-
             # driveLines = drivelisto.replace("\r", "").split('\n')
 
     elif 'linux' in sys.platform:
@@ -375,7 +374,11 @@ if __name__ == '__main__':
     volume_names = [volume.strip() for volume in args.source.lower().split(",")]
     print("Searching for volumes....")
     alldrivelist = get_drivelist()
-    alldrivelist.extend(get_mtpdrivelist())
+    mtpdrivelist = get_mtpdrivelist()
+    try:
+        alldrivelist.extend(mtpdrivelist)
+    except TypeError:
+        pass
     drivelist = []
     for volume in volume_names:
         drive_letter = get_drive_path(volume, alldrivelist)
