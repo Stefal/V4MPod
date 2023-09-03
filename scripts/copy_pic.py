@@ -430,7 +430,7 @@ if __name__ == '__main__':
             user_input.append(len(groups))
         if len(user_input) == 1:
             user_input.append(user_input[0])
-        if user_input[0].startswith('c'):
+        if str(user_input[0]).startswith('c'):
             cutoff = int(user_input[0][1:])
             groups = make_groups(piclist, cutoff)
         input_validity = check_user_choice(user_input)
