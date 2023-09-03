@@ -300,21 +300,22 @@ def dispatch_to_queue(pic, group_path):
         picQueue5.put([pic, group_path])
 
 
-def start_copy_thread():
-    """Create a thread for each queue, and send it to the "rename_and_copy_pic" function
+def start_thread(delete=False):
+    """Create a thread for each queue, and send it to the "rename_and_copy_pic" or delete function
 	"""
+    target_func = delete_pic if delete else rename_and_copy_pic
     start_time = datetime.datetime.now()
-    worker0 = Thread(target=rename_and_copy_pic, args=(picQueue0,))
+    worker0 = Thread(target=target_func, args=(picQueue0,))
     worker0.start()
-    worker1 = Thread(target=rename_and_copy_pic, args=(picQueue1,))
+    worker1 = Thread(target=target_func, args=(picQueue1,))
     worker1.start()
-    worker2 = Thread(target=rename_and_copy_pic, args=(picQueue2,))
+    worker2 = Thread(target=target_func, args=(picQueue2,))
     worker2.start()
-    worker3 = Thread(target=rename_and_copy_pic, args=(picQueue3,))
+    worker3 = Thread(target=target_func, args=(picQueue3,))
     worker3.start()
-    worker4 = Thread(target=rename_and_copy_pic, args=(picQueue4,))
+    worker4 = Thread(target=target_func, args=(picQueue4,))
     worker4.start()
-    worker5 = Thread(target=rename_and_copy_pic, args=(picQueue5,))
+    worker5 = Thread(target=target_func, args=(picQueue5,))
     worker5.start()
     picQueue0.join()
     picQueue1.join()
@@ -322,9 +323,27 @@ def start_copy_thread():
     picQueue3.join()
     picQueue4.join()
     picQueue5.join()
-    print(len(piclist[:pic_end]), "pictures copied in", (
-        datetime.datetime.now() - start_time).total_seconds(), "seconds")
+    print("{} pictures {} in {} seconds".format(len(piclist[:pic_end]), "copied" if not delete else "deleted", (datetime.datetime.now() - start_time).total_seconds()))
 
+def delete_pic(queue):
+    """Take each picture in the queue and delete it"""
+    dir_list = []
+    while not queue.empty():
+        picture, group_path = queue.get()
+        camid, picture_path, timestamp = picture
+        dir_list.append(os.path.dirname(picture_path))
+        try:
+            print("Deleting {}".format(picture_path))
+            os.remove(picture_path)
+        except Exception as e:
+            print("Can't delete file : {} - {}".format(picture_path, e))
+        queue.task_done()
+    #deleting empty directory
+    unique_dir=list(set(dir_list))
+    for dir in unique_dir:
+        if len(os.listdir(dir)) == 0:
+            print("Deleting empty directory : ", dir)
+            shutil.rmtree(dir)
 
 def rename_and_copy_pic(queue):
     """Take each picture in the queue, and copy it to the destination, with a new name.
@@ -418,8 +437,9 @@ if __name__ == '__main__':
 
     piclist.sort(key=lambda timestamp: timestamp[2])
     groups = make_groups(piclist, cutoff)
-    
+
     input_validity = False
+    delete_file = False
     while input_validity == False:
         if not allgroups:
             user_input = input(
@@ -427,7 +447,10 @@ if __name__ == '__main__':
                 "-")
         else:
             user_input = ['']
-
+        if str(user_input[0]).startswith('d'):
+            #selector to delete group
+            delete_file=True
+            user_input[0] = user_input[0][1:]
         if user_input == ['']:
             user_input[0] = 1
             user_input.append(len(groups))
@@ -454,4 +477,4 @@ if __name__ == '__main__':
     picQueue5 = Queue()
 
     make_pics_groups(piclist[:pic_end], groups[groups_start:groups_end])
-    start_copy_thread()
+    start_thread(delete_file)
