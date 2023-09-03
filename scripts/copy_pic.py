@@ -237,7 +237,7 @@ def listgroup():
         print("fin de groupe")
 
 def make_groups(piclist, cutoff):
-    """ make groups depending on cut time"""
+    """ detect groups index depending on cut time"""
 
     groups = []
     groups.append(piclist[0][1])
@@ -254,8 +254,12 @@ def make_groups(piclist, cutoff):
             groups.append(path2)
 
     for i, group in enumerate(groups):
-        groups[i] = find_in_sublist(piclist, group)
-        print("Group {0} start : {1}".format(i + 1, piclist[groups[i]][2].strftime("%Y-%m-%d_%HH%Mmn%Ss")))
+        groups[i] = int(find_in_sublist(piclist, group))
+        try:
+            end_index = int(find_in_sublist(piclist, groups[i+1]))
+        except IndexError:
+            end_index = len(piclist)
+        print("Group {0} start : {1} - {2} pictures".format(i + 1, piclist[groups[i]][2].strftime("%Y-%m-%d_%HH%Mmn%Ss"), end_index - groups[i]))
     return groups
 
 def make_pics_groups(piclist, groups):
@@ -276,7 +280,6 @@ def make_pics_groups(piclist, groups):
             dispatch_to_queue(piclist[i], group_path)
         except:
             pass
-
 
 def dispatch_to_queue(pic, group_path):
     """Send a picture to be copied and his path destination, to a specific queue.
@@ -415,7 +418,7 @@ if __name__ == '__main__':
 
     piclist.sort(key=lambda timestamp: timestamp[2])
     groups = make_groups(piclist, cutoff)
-
+    
     input_validity = False
     while input_validity == False:
         if not allgroups:
