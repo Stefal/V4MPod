@@ -123,17 +123,46 @@ def get_drive_path(volumename, alldrivelist, drive_type=None):
         alldrivelist = [drive for drive in alldrivelist if drive[drive_type_index] == drive_type]
     if 'win32' in sys.platform:
         for drive in alldrivelist:
+            # search with drive name
             if drive[3].lower() == volumename.lower():
                 return drive[2]
+            # search file in drive
+            return find_volume_file_name(volumename, drive[2])
     elif 'linux' in sys.platform:
         for drive in alldrivelist:
+            print("drive: ", drive)
+            # search with drive name
             for elt in drive.split():
                 if volumename.lower() in elt.lower():
+                    print("found: ", elt)
                     return elt
+            # search file in drive
+            if find_volume_file_name(volumename, drive):
+                return drive
     elif 'darwin' in sys.platform:
         for drive in alldrivelist:
+            # search with drive name
             if drive.lower() == volumename.lower():
                 return "/Volumes/" + drive
+            # search file in drive
+            if find_volume_file_name(volumename, drive):
+                return "/Volumes/" + drive
+
+def find_volume_file_name(filename, drive):
+    """find a name in the root dir"""
+    try:
+        for file in os.listdir(drive):
+            if filename.lower() == file.lower():
+                return drive
+    # Gopro Mtp mode hide all files in root folder, but we can place a front/right/... in the DCIM folder
+    # Let's find if it exists
+        for file in os.listdir(os.path.join(drive, 'DCIM')):
+            if filename.lower() == file.lower():
+                return drive
+    except FileNotFoundError:
+        print("exception!! ")
+        pass
+    return None
 
 def get_mtpdrivelist():
     """ Return a list of mtp drive path """
@@ -346,6 +375,7 @@ if __name__ == '__main__':
     volume_names = [volume.strip() for volume in args.source.lower().split(",")]
     print("Searching for volumes....")
     alldrivelist = get_drivelist()
+    alldrivelist.extend(get_mtpdrivelist())
     drivelist = []
     for volume in volume_names:
         drive_letter = get_drive_path(volume, alldrivelist)
