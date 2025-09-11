@@ -187,6 +187,12 @@ def main(path):
     elif "HERO11" in cam_model:
         #rtc_fix = 0.0039
         rtc_fix = 0.002
+    elif "HERO13" in cam_model:
+        #rtc_fix = 0.0039
+        rtc_fix = 0.002
+    else:
+        rtc_fix = 0
+
     newlist = []
     #print("RTC fix: ", rtc_fix)
     #sys.exit()
