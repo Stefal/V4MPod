@@ -190,6 +190,9 @@ def main(path):
     elif "HERO13" in cam_model:
         #rtc_fix = 0.0039
         rtc_fix = 0.002
+    elif "MAX2" in cam_model:
+        #test for max 2 after gopro2frame extraction. Maybe the 30fps video is at 29.97fps.
+        rtc_fix = 0.09999
     else:
         rtc_fix = 0
 
@@ -202,7 +205,7 @@ def main(path):
         #img_timestamp = image[1].replace(microsecond=image[1].microsecond*10)
         img_timestamp = image[1]
         #fix rtc drift
-        img_timestamp = img_timestamp - ((img_timestamp - starttime) * rtc_fix/100)
+        img_timestamp = img_timestamp + ((img_timestamp - starttime) * rtc_fix/100)
         print("ori : {} - new = {}".format(image[1], img_timestamp))
         newlist.append((image[0], img_timestamp))
 
