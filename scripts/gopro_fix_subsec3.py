@@ -186,13 +186,14 @@ def main(path):
         rtc_fix = 0.007
     elif "HERO11" in cam_model:
         #rtc_fix = 0.0039
-        rtc_fix = 0.002
+        #rtc_fix = -0.002
+        rtc_fix = -0.0013 #T° caméra entre 47 et 49°, t° ext environ 32°
     elif "HERO13" in cam_model:
         #rtc_fix = 0.0039
         rtc_fix = 0.002
     elif "MAX2" in cam_model:
         #test for max 2 after gopro2frame extraction. Maybe the 30fps video is at 29.97fps.
-        rtc_fix = 0.09999
+        #rtc_fix = 0.09999
     else:
         rtc_fix = 0
 
